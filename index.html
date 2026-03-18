@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coimbatore District Tennis Association – CDTA 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- ═══════════════ LOGIN OVERLAY ═══════════════ -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">CDTA 2026</div>
+    <div class="login-sub">Coimbatore District Tennis Association</div>
+    <div class="login-divider"></div>
+    <input id="login-user" class="login-field" type="text" placeholder="Username" autocomplete="username" />
+    <input id="login-pass" class="login-field" type="password" placeholder="Password" autocomplete="current-password" />
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div id="login-error" class="login-error"></div>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="site-header-top">
+    <div>
+      <h1>Coimbatore District Tennis Association — CDTA 2026</h1>
+      <div class="subtitle">Official League Dashboard · Season Jan – Apr 2026</div>
+    </div>
+    <div style="text-align:right">
+      <div class="badge">WEEK 7 OF 11</div>
+      <div style="font-size:.72rem;color:rgba(255,255,255,.45);margin-top:4px;">Last updated: 13 Mar 2026</div>
+      <button class="logout-btn" onclick="doLogout()" style="margin-top:6px">⏻ Sign Out</button>
+    </div>
+  </div>
+  <div class="division-bar">
+    <button class="div-btn" onclick="switchToSvgClub(this)" style="border-bottom-color:transparent">SVG Players</button>
+    <button class="div-btn active" onclick="switchDivision('I', this)">Division I</button>
+    <button class="div-btn" onclick="switchToDivF(this)">Division F</button>
+    <button class="div-btn" onclick="switchToDivC(this)">Division C</button>
+  </div>
+</header>
+
+<nav class="nav-bar" id="main-nav-bar">
+  <!-- Div I / Div C tabs (default) -->
+  <div id="nav-divs" style="display:flex">
+    <button class="nav-btn active" onclick="showPage('standings')">Standings</button>
+    <button class="nav-btn" onclick="showPage('projection')">Projection</button>
+    <button class="nav-btn" onclick="showPage('teams')">Teams</button>
+    <button class="nav-btn" onclick="showPage('schedule')">Schedule</button>
+    <button class="nav-btn" onclick="showPage('results')">Results</button>
+    <button class="nav-btn" onclick="showPage('players')">Players</button>
+    <button class="nav-btn" onclick="showPage('stats')">Stats</button>
+  </div>
+  <!-- SVG Players tabs (shown only when SVG Players is active) -->
+  <div id="nav-svg" style="display:none">
+    <button id="svgsubbtn-performance" class="nav-btn active" onclick="showSvgTab('performance',this)">Club Performance</button>
+    <button id="svgsubbtn-players"     class="nav-btn"        onclick="showSvgTab('players',this)">Players</button>
+  </div>
+</nav>
+
+<!-- ═══════════════ DIV_I_STANDINGS ═══════════════ -->
+<div id="page-standings" class="page active">
+  <div class="section-title">Current Standings — Week 8</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val">104</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">85♂ · 19♀</div><div class="lbl">Male / Female</div></div>
+    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">9</div><div class="lbl">Walk-overs Given</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-standings">
+      <thead>
+        <tr>
+          <th onclick="sortTable('tbl-standings',0)">#</th>
+          <th onclick="sortTable('tbl-standings',1)">Team</th>
+          <th onclick="sortTable('tbl-standings',2)">Pts</th>
+          <th onclick="sortTable('tbl-standings',3)">Played</th>
+          <th onclick="sortTable('tbl-standings',4)">Sets Won</th>
+          <th onclick="sortTable('tbl-standings',5)">Sets Lost</th>
+          <th onclick="sortTable('tbl-standings',6)">Games Won</th>
+          <th onclick="sortTable('tbl-standings',7)">Games Lost</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-standings"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ PROJECTION ═══════════════ -->
+<div id="page-projection" class="page">
+  <div class="section-title">Points Projection — H2H Common-Opponent Method</div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:.8rem;color:var(--muted);line-height:1.6;">
+    For each upcoming match, common opponents are identified. Points earned against those same opponents are summed for both teams and split proportionally to estimate expected points.
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-proj">
+      <thead>
+        <tr>
+          <th>#</th><th>Team</th><th title="Matches played × 3 (max pts available so far)">Played Pts</th><th>Current Pts</th><th>+Expected</th><th>Projected Total</th><th>Min</th><th>Max</th><th>Projection Bar</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-proj"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:20px;padding:14px 18px;background:#fffbeb;border:1px solid #f6d860;border-radius:8px;font-size:.82rem;color:var(--text);">
+    ⭐ <strong style="color:var(--accent)">Title Race — Week 8 Update:</strong>
+    SATCHIDANANDA lead TenniMaSh Tots <strong style="color:var(--accent)">21–20</strong> after 7 matches each. Both unbeaten. 3 matches remaining each. 
+    <strong>Week 11 (04 Apr):</strong> TenniMaSh Tots vs SATCHIDANANDA at TenniMaSh Academy — winner likely takes Division I 2026.
+  </div>
+
+  <!-- ── MIN / MAX BREAKDOWN TABLES ── -->
+  <div style="margin-top:32px;">
+    <div class="section-title" style="font-size:1.1rem;">Projection Breakdown</div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">
+      For teams with known min/max bounds, each remaining fixture is assessed individually.
+      Min = all remaining opponents sweep (0 pts per match). Max = team wins all remaining matches (3 pts each).
+      Common-opponent data is used to estimate the realistic split for the projected column.
+    </div>
+    <div id="minmax-breakdown-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:20px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ TEAMS ═══════════════ -->
+<div id="page-teams" class="page">
+  <div class="section-title">Team Directory</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Surface</th><th>Players</th></tr>
+      </thead>
+      <tbody id="tbody-teams"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ DIV_I_SCHEDULE ═══════════════ -->
+<div id="page-schedule" class="page">
+  <div class="section-title">Full Season Schedule</div>
+  <div id="schedule-container"></div>
+</div>
+
+<!-- ═══════════════ RESULTS ═══════════════ -->
+<div id="page-results" class="page">
+  <div class="section-title">Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="results-week-filter" onchange="renderResults()">
+      <option value="">All Weeks</option>
+      <option value="1">Week 1</option>
+      <option value="2">Week 2</option>
+      <option value="3">Week 3</option>
+      <option value="4">Week 4</option>
+      <option value="5">Week 5</option>
+      <option value="6">Week 6</option>
+      <option value="7">Week 7</option>
+      <option value="8">Week 8</option>
+    </select>
+    <select id="results-team-filter" onchange="renderResults()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
+  <div id="results-container"></div>
+</div>
+
+<!-- ═══════════════ DIV_I_PLAYERS ═══════════════ -->
+<div id="page-players" class="page">
+  <div class="section-title">Player Roster — All 104 Players</div>
+  <div class="filter-row">
+    <input type="text" id="player-search" placeholder="Search player name…" oninput="renderPlayers()">
+    <select id="player-team-filter" onchange="renderPlayers()">
+      <option value="">All Teams</option>
+    </select>
+    <select id="player-gender-filter" onchange="renderPlayers()">
+      <option value="">All Genders</option>
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-players">
+      <thead>
+        <tr>
+          <th onclick="sortPlayers('name')"  >Player Name</th>
+          <th onclick="sortPlayers('team')"  >Team</th>
+          <th onclick="sortPlayers('gender')">Gender</th>
+          <th onclick="sortPlayers('gamesPlayed')" title="Court appearances">Played</th>
+          <th onclick="sortPlayers('wins')"  title="Court wins">Wins / Loss</th>
+          <th onclick="sortPlayers('winpct')" title="Win percentage">Win %</th>
+          <th>Partners Played</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-players"></tbody>
+    </table>
+  </div>
+  <div id="player-totals" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:12px;"></div>
+  <div id="player-count" style="font-size:.75rem;color:var(--muted);margin-top:8px;text-align:right;"></div>
+</div>
+
+<!-- ═══════════════ STATS ═══════════════ -->
+<div id="page-stats" class="page">
+  <div class="section-title">League Statistics & Key Pairs</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Demographics</div>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><td>Total Players</td><td class="pts-cell">104</td></tr>
+            <tr><td>Male</td><td>85 (82%)</td></tr>
+            <tr><td>Female</td><td>19 (18%)</td></tr>
+            <tr><td>Average Age</td><td>~35 yrs</td></tr>
+            <tr><td>Oldest Player</td><td>Natarajan, 80 (SVG Champs)</td></tr>
+            <tr><td>Youngest Players</td><td>Virat & Damien Stany, 10</td></tr>
+            <tr><td>Outstation Players</td><td>13 across 8 teams</td></tr>
+            <tr><td>Female Captains</td><td>Shyama Kelath · Giulia Bosco</td></tr>
+            <tr><td>All-Male Teams</td><td>GREEN NEST-B · S RAILWAY-B</td></tr>
+            <tr><td>Total Walkovers Given</td><td>6 courts</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Walkover Summary</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Team</th><th>W/O Given</th><th>Courts Lost</th></tr></thead>
+          <tbody>
+            <tr><td>GREEN NEST-B</td><td style="color:var(--red)">4</td><td style="font-size:.75rem;color:var(--muted)">Ct1 vs TGLO (Wk3) · Ct3 vs STARS (Wk4) · Ct3 vs CHAMPS (Wk6) · Ct2 vs RAIL (Wk7)</td></tr>
+            <tr><td>Kingsberry</td><td style="color:var(--red)">4</td><td style="font-size:.75rem;color:var(--muted)">Ct3 vs SATCH (Wk2) · Ct3 vs TTOTS (Wk6) · Ct2 vs TGLO (Wk8) · Ct3 vs TGLO (Wk8)</td></tr>
+            <tr><td>SVG Champs</td><td style="color:var(--red)">1</td><td style="font-size:.75rem;color:var(--muted)">Ct1 vs STARS</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="section-title">Most Active Doubles Pairs</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Pair</th><th>Team</th><th>Appearances</th><th>Wins</th><th>Win Rate</th></tr></thead>
+      <tbody id="tbody-pairs"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════ SVG DIV_I_PLAYERS ═══════════════ -->
+<div id="page-svgclub" class="page">
+  <div class="section-title">Sreevatsa Club</div>
+
+
+
+  <!-- ── SUB-TAB: CLUB PERFORMANCE ── -->
+  <div id="svgtab-performance">
+
+    <!-- Club Overview Cards -->
+    <div class="stat-grid" style="margin-bottom:24px;">
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val">4</div><div class="lbl">Teams (Div I×2 + F + C)</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val">37</div><div class="lbl">Combined Players</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val">14</div><div class="lbl">Div I Pts (STARS)</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val">8</div><div class="lbl">Div I Pts (CHAMPS)</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val">9</div><div class="lbl">Div C Pts (BLUES)</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val">16</div><div class="lbl">Div F Pts (ACES)</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val" style="color:var(--green)">23</div>
+        <div class="lbl">Home Courts Won</div>
+      </div>
+      <div class="stat-box" style="border-top:3px solid var(--accent)">
+        <div class="val" style="color:var(--red)">16</div>
+        <div class="lbl">Home Courts Lost</div>
+      </div>
+    </div>
+
+    <!-- Club Narrative: Four Teams, One Home -->
+    <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #f6d860;border-radius:10px;padding:18px 22px;margin-bottom:24px;font-size:.83rem;color:var(--text);line-height:1.75;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">🏟️ Sreevatsa Club — Four Teams, One Home</div>
+
+      <!-- STARS card -->
+      <div style="background:rgba(255,255,255,.6);border:1px solid #f6d860;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div style="min-width:110px;">
+          <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:.75rem;color:var(--accent);letter-spacing:1px">SREEVATSA STARS</div>
+          <div style="font-size:.65rem;background:rgba(37,99,235,.1);color:var(--accent2);padding:2px 7px;border-radius:3px;display:inline-block;margin-top:3px;letter-spacing:.8px;font-weight:600">DIV I</div>
+        </div>
+        <div style="flex:1;font-size:.8rem;">
+          <strong>Captain:</strong> Monish &nbsp;·&nbsp; <strong>Players:</strong> 11 &nbsp;·&nbsp; <strong>Position:</strong> <span style="color:var(--green);font-weight:700">#3 in Div I</span><br>
+          <strong>Record:</strong> 5W–2L &nbsp;·&nbsp; <strong>Points:</strong> 14 &nbsp;·&nbsp; <strong>Projected:</strong> ~21.5 pts<br>
+          Contention for top-3 finish. Zero walkovers given all season. Rest week in Week 8.<br>
+          <span style="color:var(--muted);font-size:.77rem;">📈 Projected <strong>top-3 finish</strong> · 🚫 Zero walkovers · 🤝 Monish &amp; Kishore: <strong>4 apps, 3 wins</strong> · ⚔️ 3 matches remaining (Wk9 home vs KING, Wk10 away vs SNS, Wk11 home vs TGLO)</span>
+        </div>
+      </div>
+
+      <!-- CHAMPS card -->
+      <div style="background:rgba(255,255,255,.6);border:1px solid #f6d860;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div style="min-width:110px;">
+          <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:.75rem;color:var(--muted);letter-spacing:1px">SVG CHAMPS</div>
+          <div style="font-size:.65rem;background:rgba(37,99,235,.1);color:var(--accent2);padding:2px 7px;border-radius:3px;display:inline-block;margin-top:3px;letter-spacing:.8px;font-weight:600">DIV I</div>
+        </div>
+        <div style="flex:1;font-size:.8rem;">
+          <strong>Captain:</strong> Murugesan M &nbsp;·&nbsp; <strong>Players:</strong> 8 &nbsp;·&nbsp; <strong>Position:</strong> <span style="color:var(--muted);font-weight:600">#8 in Div I</span><br>
+          <strong>Record:</strong> 2W–6L &nbsp;·&nbsp; <strong>Points:</strong> 8 &nbsp;·&nbsp; <strong>Projected:</strong> ~11.2 pts<br>
+          Home to <strong>Natarajan (age 80)</strong>, the oldest player across all divisions.<br>
+          <span style="color:var(--muted);font-size:.77rem;">👴 Natarajan (80) — oldest in CDTA 2026 · 🔥 Abdul Rahiman K &amp; Gnanasekaran S: <strong>8 played, 5 wins</strong> · 🤝 Senthilkumar T &amp; Jeevaraj A: <strong>6 apps</strong></span>
+        </div>
+      </div>
+
+      <!-- BLUES card -->
+      <div style="background:rgba(255,255,255,.6);border:1px solid #f6d860;border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div style="min-width:110px;">
+          <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:.75rem;color:var(--accent2);letter-spacing:1px">SREEVATSA BLUES</div>
+          <div style="font-size:.65rem;background:rgba(37,99,235,.1);color:var(--accent2);padding:2px 7px;border-radius:3px;display:inline-block;margin-top:3px;letter-spacing:.8px;font-weight:600">DIV C</div>
+        </div>
+        <div style="flex:1;font-size:.8rem;">
+          <strong>Captain:</strong> Nagendran K &nbsp;·&nbsp; <strong>Players:</strong> 9 &nbsp;·&nbsp; <strong>Position:</strong> <span style="color:var(--muted);font-weight:600">#8 in Div C</span><br>
+          <strong>Record:</strong> 3W–5L &nbsp;·&nbsp; <strong>Points:</strong> 9 &nbsp;·&nbsp; <strong>Projected:</strong> ~11.8 pts<br>
+          Strong individual court win rate (60%). Arulanand N / Raja pair unbeaten in 6 appearances.<br>
+          <span style="color:var(--muted);font-size:.77rem;">💡 60% court win rate · 🔥 Arulanand N &amp; Raja: <strong>6 apps, 4 wins</strong> · 🚫 Zero walkovers in Div C</span>
+        </div>
+      </div>
+
+      <!-- ACES card -->
+      <div style="background:rgba(255,255,255,.6);border:1px solid #f6d860;border-radius:8px;padding:12px 16px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div style="min-width:110px;">
+          <div style="font-family:'DM Mono',monospace;font-weight:700;font-size:.75rem;color:#16a34a;letter-spacing:1px">SREEVATSA ACES</div>
+          <div style="font-size:.65rem;background:rgba(22,163,74,.1);color:#16a34a;padding:2px 7px;border-radius:3px;display:inline-block;margin-top:3px;letter-spacing:.8px;font-weight:600">DIV F</div>
+        </div>
+        <div style="flex:1;font-size:.8rem;">
+          <strong>Captain:</strong> Dr. Sethupathy &nbsp;·&nbsp; <strong>Players:</strong> 9 &nbsp;·&nbsp; <strong>Position:</strong> <span style="color:var(--green);font-weight:700">#2 in Div F</span><br>
+          <strong>Record:</strong> 6W–1L &nbsp;·&nbsp; <strong>Points:</strong> 16 &nbsp;·&nbsp; <strong>Projected:</strong> ~20.5 pts<br>
+          Genuine title contender — won Wk8 vs MAPLES 2–1. Highest club win rate at 76%.<br>
+          <span style="color:var(--muted);font-size:.77rem;">🔑 J. Suresh Kumar: <strong>7 played, 7 won</strong> · 🤝 J. Suresh Kumar &amp; Yash P Batheja: <strong>5 apps</strong> · ⚡ 73% court win rate</span>
+        </div>
+      </div>
+
+      <!-- Club-wide note -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid #f6d860;font-size:.78rem;color:var(--muted);line-height:1.6;">
+        🏅 Only club with teams across <strong>three CDTA divisions</strong> simultaneously (Div I × 2, Div F × 1, Div C × 1) &nbsp;·&nbsp;
+        🏠 All four teams share <strong>Sreevatsa Club</strong> as home venue &nbsp;·&nbsp;
+        👥 <strong>37 players</strong> combined — largest club representation in the league
+      </div>
+    </div>
+
+    <!-- Club-wide Performance Breakdown -->
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Club-wide Performance Breakdown</div>
+    <div class="table-wrap" style="margin-bottom:24px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Stat</th>
+            <th style="color:var(--accent)">SREEVATSA STARS</th>
+            <th style="color:#64748b">SVG Champs</th>
+            <th style="color:var(--accent2)">SREEVATSA BLUES</th>
+            <th style="color:#16a34a">SREEVATSA ACES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Division</td><td style="font-size:.72rem">Div I</td><td style="font-size:.72rem">Div I</td><td style="font-size:.72rem">Div C</td><td style="font-size:.72rem;color:#16a34a">Div F</td></tr>
+          <tr><td>League Position</td><td style="color:var(--accent);font-weight:600">#3 (Div I)</td><td>#8 (Div I)</td><td style="color:var(--accent2)">#8 (Div C)</td><td style="color:#16a34a;font-weight:600">#2 (Div F)</td></tr>
+          <tr><td>Points</td><td style="color:var(--accent);font-weight:600">14</td><td>8</td><td style="color:var(--accent2)">9</td><td style="color:#16a34a;font-weight:600">16</td></tr>
+          <tr><td>Weeks Played</td><td>7</td><td>8</td><td>8</td><td>7</td></tr>
+          <tr><td>Wins / Losses</td>
+            <td style="color:var(--green);font-weight:600">14 courts won – <span style="color:var(--red)">7 lost</span></td>
+            <td>8 courts won – <span style="color:var(--red)">16 lost</span></td>
+            <td style="color:var(--accent2)">9 courts won – <span style="color:var(--red)">15 lost</span></td>
+            <td style="color:#16a34a;font-weight:600">16 courts won – <span style="color:var(--red)">5 lost</span></td>
+          </tr>
+          <tr style="background:#f0fdf4">
+            <td style="padding-left:18px;font-size:.78rem;color:var(--muted)">↳ Home (match W-L)</td>
+            <td style="font-size:.78rem;color:var(--green);font-weight:600">5W – <span style="color:var(--red)">0L</span></td>
+            <td style="font-size:.78rem">2W – <span style="color:var(--red)">3L</span></td>
+            <td style="font-size:.78rem;color:var(--accent2)">1W – <span style="color:var(--red)">3L</span></td>
+            <td style="font-size:.78rem;color:#16a34a">2W – <span style="color:var(--red)">1L</span></td>
+          </tr>
+          <tr style="background:#fff7ed">
+            <td style="padding-left:18px;font-size:.78rem;color:var(--muted)">↳ Away (match W-L)</td>
+            <td style="font-size:.78rem;color:var(--red)">0W – <span style="color:var(--red)">2L</span></td>
+            <td style="font-size:.78rem;color:var(--red)">0W – <span style="color:var(--red)">3L</span></td>
+            <td style="font-size:.78rem;color:var(--accent2)">2W – <span style="color:var(--red)">2L</span></td>
+            <td style="font-size:.78rem;color:#16a34a">4W – 0L</td>
+          </tr>
+          <tr><td>Sets Won / Lost</td><td>29 / 17</td><td>18 / 33</td><td>22 / 33</td><td style="color:#16a34a">32 / 13</td></tr>
+          <tr><td>Games Won / Lost</td><td>188 / 127</td><td>157 / 228</td><td>192 / 236</td><td style="color:#16a34a">215 / 132</td></tr>
+          <tr><td>Win Rate</td><td style="color:var(--green);font-weight:600">67%</td><td>33%</td><td style="color:var(--accent2);font-weight:600">38%</td><td style="color:#16a34a;font-weight:700">76%</td></tr>
+          <tr><td>Projected Final Points</td><td style="color:var(--accent);font-weight:600">~21.5</td><td>~11.2</td><td style="color:var(--accent2)">~11.8</td><td style="color:#16a34a;font-weight:600">~20.5</td></tr>
+          <tr><td>Walkovers Given</td><td>0</td><td style="color:var(--red)">1 court (Wk3 vs STARS)</td><td>0</td><td>0</td></tr>
+          <tr><td>Female Players</td><td>1 (Revathi)</td><td>1 (Dhivya Kanakabala B)</td><td>0</td><td>0</td></tr>
+          <tr><td>Age Range</td><td>14 – 65</td><td>42 – <strong>80 (Natarajan!)</strong></td><td>17 – 50</td><td style="color:#16a34a">28 – 69</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div><!-- end svgtab-performance -->
+
+  <!-- ── SUB-TAB: DIV_I_PLAYERS ── -->
+  <div id="svgtab-players" style="display:none">
+
+    <!-- Merged player table -->
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px;">Sreevatsa Club — CDTA Players 2026</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <button id="svgbtn-all"    onclick="filterSvgClub('all')"   style="padding:7px 18px;border-radius:6px;border:2px solid var(--accent);background:var(--accent);color:#fff;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .2s">ALL</button>
+      <button id="svgbtn-STARS"  onclick="filterSvgClub('STARS')" style="padding:7px 18px;border-radius:6px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s">SREEVATSA STARS <span style="font-size:.6rem;background:rgba(37,99,235,.1);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">DIV I</span></button>
+      <button id="svgbtn-CHAMPS" onclick="filterSvgClub('CHAMPS')" style="padding:7px 18px;border-radius:6px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s">SVG CHAMPS <span style="font-size:.6rem;background:rgba(37,99,235,.1);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">DIV I</span></button>
+      <button id="svgbtn-SVG-C"  onclick="filterSvgClub('SVG-C')" style="padding:7px 18px;border-radius:6px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s">SREEVATSA BLUES <span style="font-size:.6rem;background:rgba(37,99,235,.1);color:var(--accent2);padding:1px 5px;border-radius:3px;margin-left:3px">DIV C</span></button>
+      <button id="svgbtn-ACES"   onclick="filterSvgClub('ACES')"  style="padding:7px 18px;border-radius:6px;border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:1px;cursor:pointer;transition:all .2s">SREEVATSA ACES <span style="font-size:.6rem;background:rgba(22,163,74,.1);color:#16a34a;padding:1px 5px;border-radius:3px;margin-left:3px">DIV F</span></button>
+    </div>
+    <div class="table-wrap" style="margin-bottom:12px;">
+      <table id="tbl-svgclub-players">
+        <thead>
+          <tr>
+            <th>Player Name</th>
+            <th>Division</th>
+            <th>Team</th>
+            <th>Gender</th>
+            <th title="Court appearances">Played</th>
+            <th>Wins / Loss</th>
+            <th>Win %</th>
+            <th>Partners Played</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-svgclub-merged"></tbody>
+      </table>
+    </div>
+    <div id="svgclub-totals" style="display:none;"></div>
+
+  </div><!-- end svgtab-players -->
+
+</div>
+
+
+<!-- ═══════════════ DIVISION F ═══════════════ -->
+<!-- ═══════════════ DIVISION F PAGES ═══════════════ -->
+<div id="page-divf-standings" class="page">
+  <div class="section-title">Division F — Standings · Week 8</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val">104</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">96♂ · 8♀</div><div class="lbl">Male / Female</div></div>
+    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">2</div><div class="lbl">Walk-overs Given</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divf-standings">
+      <thead>
+        <tr>
+          <th onclick="sortTable('tbl-divf-standings',0)">#</th>
+          <th onclick="sortTable('tbl-divf-standings',1)">Team</th>
+          <th onclick="sortTable('tbl-divf-standings',2)">Pts</th>
+          <th onclick="sortTable('tbl-divf-standings',3)">Played</th>
+          <th onclick="sortTable('tbl-divf-standings',4)">Sets Won</th>
+          <th onclick="sortTable('tbl-divf-standings',5)">Sets Lost</th>
+          <th onclick="sortTable('tbl-divf-standings',6)">Games Won</th>
+          <th onclick="sortTable('tbl-divf-standings',7)">Games Lost</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-divf-standings"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page-divf-projection" class="page">
+  <div class="section-title">Division F — Points Projection — H2H Common-Opponent Method</div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:.8rem;color:var(--muted);line-height:1.6;">
+    For each upcoming match, common opponents are identified. Points earned against those same opponents are split proportionally to estimate expected points.
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divf-proj">
+      <thead><tr><th>#</th><th>Team</th><th title="Matches played × 3">Played Pts</th><th>Current Pts</th><th>+Expected</th><th>Projected Total</th><th>Max</th><th>Projection Bar</th></tr></thead>
+      <tbody id="tbody-divf-proj"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:16px;padding:12px 16px;background:#fffbeb;border:1px solid #f6d860;border-radius:8px;font-size:.82rem;color:var(--text);">
+    ⭐ <strong style="color:var(--accent)">Week 8 Update:</strong> GREEN NEST-A leads with 17 pts but ACES &amp; SNS on 16 pts — a 3-way title race heading into the final 3 rounds.
+  </div>
+
+  <!-- ── DIVISION F MIN / MAX BREAKDOWN ── -->
+  <div style="margin-top:32px;">
+    <div class="section-title" style="font-size:1.1rem;">Projection Breakdown — Top 5 Teams</div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">
+      For the top 5 teams, each remaining fixture is assessed individually using the H2H common-opponent method.
+      Max = team wins all remaining courts (3 pts each). Projected = proportional common-opponent split.
+    </div>
+    <div id="divf-projbreakdown-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:20px;"></div>
+  </div>
+</div>
+
+<div id="page-divf-teams" class="page">
+  <div class="section-title">Division F — Team Directory</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Surface</th><th>Players</th></tr></thead>
+      <tbody id="tbody-divf-teams"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page-divf-schedule" class="page">
+  <div class="section-title">Division F — Full Season Schedule</div>
+  <div id="divf-schedule-container"></div>
+</div>
+
+<div id="page-divf-results" class="page">
+  <div class="section-title">Division F — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divf-results-week-filter" onchange="renderDivFResults()">
+      <option value="">All Weeks</option>
+      <option value="1">Week 1</option><option value="2">Week 2</option>
+      <option value="3">Week 3</option><option value="4">Week 4</option>
+      <option value="5">Week 5</option><option value="6">Week 6</option>
+      <option value="7">Week 7</option><option value="8">Week 8</option>
+    </select>
+    <select id="divf-results-team-filter" onchange="renderDivFResults()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
+  <div id="divf-results-container"></div>
+</div>
+
+<div id="page-divf-players" class="page">
+  <div class="section-title">Division F — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divf-player-search" placeholder="Search player name…" oninput="renderDivFPlayers()">
+    <select id="divf-player-team-filter" onchange="renderDivFPlayers()">
+      <option value="">All Teams</option>
+    </select>
+    <select id="divf-player-gender-filter" onchange="renderDivFPlayers()">
+      <option value="">All Genders</option>
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divf-players">
+      <thead>
+        <tr>
+          <th onclick="sortDivFPlayers('name')">Player Name</th>
+          <th onclick="sortDivFPlayers('team')">Team</th>
+          <th onclick="sortDivFPlayers('gender')">Gender</th>
+          <th onclick="sortDivFPlayers('gamesPlayed')" title="Court appearances">Played</th>
+          <th onclick="sortDivFPlayers('wins')" title="Court wins">Wins / Loss</th>
+          <th onclick="sortDivFPlayers('winpct')" title="Win percentage">Win %</th>
+          <th>Partners Played</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-divf-players"></tbody>
+    </table>
+  </div>
+  <div id="divf-player-totals" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:12px;"></div>
+  <div id="divf-player-count" style="font-size:.75rem;color:var(--muted);margin-top:8px;text-align:right;"></div>
+</div>
+
+<div id="page-divf-stats" class="page">
+  <div class="section-title">Division F — League Statistics</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">League Overview</div>
+      <div class="table-wrap"><table><tbody>
+        <tr><td>Total Teams</td><td class="pts-cell">11</td></tr>
+        <tr><td>Total Players</td><td class="pts-cell">127</td></tr>
+        <tr><td>Matches Played (Wk1–7)</td><td>35</td></tr>
+        <tr><td>Sreevatsa Club Team</td><td style="color:var(--accent);font-weight:600">SREEVATSA ACES</td></tr>
+        <tr><td>Leader (Wk7)</td><td>GREEN NEST-A · 17 pts</td></tr>
+        <tr><td>Unbeaten teams</td><td>None (GNEST has 1 loss)</td></tr>
+        <tr><td>Winless teams</td><td>ALV ACERS · CMTA-B (0W–6L)</td></tr>
+        <tr><td>Largest squad</td><td>ALV ACERS (16 players)</td></tr>
+        <tr><td>Smallest squads</td><td>CCTA-C · CMTA-B · GNEST (8)</td></tr>
+      </tbody></table></div>
+    </div>
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Known Key Pairs</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Pair</th><th>Team</th><th>Apps</th><th>Wins</th><th>Win Rate</th></tr></thead>
+          <tbody id="tbody-divf-pairs"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 20px;font-size:.8rem;color:var(--muted);line-height:1.8;">
+    <strong style="color:var(--text);display:block;margin-bottom:6px;">⚡ Division F Fast Facts</strong>
+    🏅 <strong>SREEVATSA ACES</strong> represent Sreevatsa Club in Division F — 2nd on 14 pts (5W–1L)<br>
+    🎯 <strong>GREEN NEST-A</strong> leads with 17 pts (6W–1L)<br>
+    📊 ACES, SNS, ALPHA, CCTA all between 13–14 pts with 4 rounds left<br>
+    ⚡ <strong>ALV ACERS</strong> and <strong>CMTA-B</strong> yet to win — 2 pts each from 6 matches<br>
+    🤝 SNS pair Kishore Kumar V / Yashwanth Avinash K and Harish Mahadevan / Celine Mariya B both 5W from 7 apps
+  </div>
+</div>
+
+<!-- ═══════════════ DIVISION C PAGES ═══════════════ -->
+<div id="page-divc-standings" class="page">
+  <div class="section-title">Division C — Standings · Week 8</div>
+  <div class="stat-grid" style="margin-bottom:24px;">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val">100</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">96♂ · 4♀</div><div class="lbl">Male / Female</div></div>
+    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">5</div><div class="lbl">Walk-overs Given</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divc-standings">
+      <thead>
+        <tr>
+          <th onclick="sortTable('tbl-divc-standings',0)">#</th>
+          <th onclick="sortTable('tbl-divc-standings',1)">Team</th>
+          <th onclick="sortTable('tbl-divc-standings',2)">Pts</th>
+          <th onclick="sortTable('tbl-divc-standings',3)">Played</th>
+          <th onclick="sortTable('tbl-divc-standings',4)">Sets Won</th>
+          <th onclick="sortTable('tbl-divc-standings',5)">Sets Lost</th>
+          <th onclick="sortTable('tbl-divc-standings',6)">Games Won</th>
+          <th onclick="sortTable('tbl-divc-standings',7)">Games Lost</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-divc-standings"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:14px;padding:12px 16px;background:#fffbeb;border:1px solid #f6d860;border-radius:8px;font-size:.82rem;color:var(--text);">
+    ⭐ <strong style="color:var(--accent)">Week 8 Update:</strong> SNS TENNIS A lead with 17 pts after 8 matches. FMP-C &amp; PSG-C close behind on 15 pts. 3 rounds remaining — title race still wide open.
+  </div>
+</div>
+
+<div id="page-divc-projection" class="page">
+  <div class="section-title">Division C — Points Projection — H2H Common-Opponent Method</div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:.8rem;color:var(--muted);line-height:1.6;">
+    For each upcoming match, common opponents are identified. Points earned against those same opponents are summed for both teams and split proportionally to estimate expected points.
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divc-proj">
+      <thead>
+        <tr><th>#</th><th>Team</th><th title="Matches played × 3">Played Pts</th><th>Current Pts</th><th>+Expected</th><th>Projected Total</th><th>Max</th><th>Projection Bar</th></tr>
+      </thead>
+      <tbody id="tbody-divc-proj"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:20px;padding:14px 18px;background:#fffbeb;border:1px solid #f6d860;border-radius:8px;font-size:.82rem;color:var(--text);">
+    ⭐ <strong style="color:var(--accent)">Title Race — Wks 8–11:</strong>
+    FMP-A leads projection (~20.5), SNS-A (~20.0), PSG-A (~19.6). LIF vs SNS Wk7 result still pending.
+  </div>
+  <div style="margin-top:32px;">
+    <div class="section-title" style="font-size:1.1rem;">Projection Breakdown</div>
+    <div style="font-size:.78rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">
+      Per-fixture expected points for teams with the most at stake in the title race.
+    </div>
+    <div id="divc-projbreakdown-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:20px;"></div>
+  </div>
+</div>
+
+<div id="page-divc-teams" class="page">
+  <div class="section-title">Division C — Team Directory</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Surface</th><th>Players</th></tr></thead>
+      <tbody id="tbody-divc-teams"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="page-divc-schedule" class="page">
+  <div class="section-title">Division C — Full Season Schedule</div>
+  <div id="divc-schedule-container"></div>
+</div>
+
+<div id="page-divc-results" class="page">
+  <div class="section-title">Division C — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divc-results-week-filter" onchange="renderDivCResults()">
+      <option value="">All Weeks</option>
+      <option value="1">Week 1</option><option value="2">Week 2</option>
+      <option value="3">Week 3</option><option value="4">Week 4</option>
+      <option value="5">Week 5</option><option value="6">Week 6</option>
+      <option value="7">Week 7</option><option value="8">Week 8</option>
+    </select>
+    <select id="divc-results-team-filter" onchange="renderDivCResults()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
+  <div id="divc-results-container"></div>
+</div>
+
+<div id="page-divc-players" class="page">
+  <div class="section-title">Division C — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divc-player-search" placeholder="Search player name…" oninput="renderDivCPlayers()">
+    <select id="divc-player-team-filter" onchange="renderDivCPlayers()">
+      <option value="">All Teams</option>
+    </select>
+    <select id="divc-player-gender-filter" onchange="renderDivCPlayers()">
+      <option value="">All Genders</option>
+      <option value="M">Male</option>
+      <option value="F">Female</option>
+    </select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divc-players">
+      <thead>
+        <tr>
+          <th onclick="sortDivCPlayers('name')">Player Name</th>
+          <th onclick="sortDivCPlayers('team')">Team</th>
+          <th onclick="sortDivCPlayers('gender')">Gender</th>
+          <th onclick="sortDivCPlayers('gamesPlayed')" title="Court appearances">Played</th>
+          <th onclick="sortDivCPlayers('wins')" title="Court wins">Wins / Loss</th>
+          <th onclick="sortDivCPlayers('winpct')" title="Win percentage">Win %</th>
+          <th>Partners Played</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-divc-players"></tbody>
+    </table>
+  </div>
+  <div id="divc-player-totals" style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:12px;"></div>
+  <div id="divc-player-count" style="font-size:.75rem;color:var(--muted);margin-top:8px;text-align:right;"></div>
+</div>
+
+<div id="page-divc-stats" class="page">
+  <div class="section-title">Division C — League Statistics</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Demographics</div>
+      <div class="table-wrap">
+        <table><tbody>
+          <tr><td>Total Players</td><td class="pts-cell">114</td></tr>
+          <tr><td>Female Players</td><td>3 (Dakshnasree, V. Diya Darshini, Vishruthi P)</td></tr>
+          <tr><td>Female Captains</td><td>None</td></tr>
+          <tr><td>Teams</td><td>11</td></tr>
+          <tr><td>Matches Played</td><td>34 (+ 1 pending)</td></tr>
+          <tr><td>Total Walkovers</td><td>5 courts (FMP ×1, LIF ×3, ANU ×1)</td></tr>
+          <tr><td>Largest Squad</td><td>PSG-A — 10 players</td></tr>
+          <tr><td>Smallest Squad</td><td>FMP-A — 7 players</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px;">Walkover Summary</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Team</th><th>W/O Courts</th><th>Details</th></tr></thead>
+          <tbody>
+            <tr><td>LIF-A</td><td style="color:var(--red)">3</td><td style="font-size:.75rem;color:var(--muted)">Ct3 vs CMT (Wk2) · Ct3 vs SVG (Wk3) · Ct3 vs TIR (Wk4)</td></tr>
+            <tr><td>FMP-A</td><td style="color:var(--red)">1</td><td style="font-size:.75rem;color:var(--muted)">Ct3 vs CMT (Wk4)</td></tr>
+            <tr><td>ANU-A</td><td style="color:var(--red)">1</td><td style="font-size:.75rem;color:var(--muted)">Ct2 vs CMT (Wk5)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="section-title" style="font-size:1.1rem;">Most Active Doubles Pairs</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Pair</th><th>Team</th><th>Appearances</th><th>Wins</th><th>Win Rate</th></tr></thead>
+      <tbody id="tbody-divc-pairs"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Data files must load before app logic -->
+<script src="data/auth.js"></script>
+<script src="data/division-i.js"></script>
+<script src="data/division-c.js"></script>
+<script src="data/division-f.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
