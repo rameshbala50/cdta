@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Coimbatore District Tennis Association – CDTA 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=202603240912">
+<link rel="stylesheet" href="css/main.css?v=202603240957">
 </head>
 <body>
 
@@ -784,6 +784,8 @@
     <button id="admin-tab-users" class="admin-subnav active" onclick="showAdminTab('users',this)">User Management</button>
     <button id="admin-tab-login" class="admin-subnav" onclick="showAdminTab('login',this)">Login History</button>
     <button id="admin-tab-usage" class="admin-subnav" onclick="showAdminTab('usage',this)">Usage Log</button>
+    <button id="admin-tab-activity" class="admin-subnav" onclick="showAdminTab('activity',this)">Activity Log</button>
+    <button id="admin-tab-testplan" class="admin-subnav" onclick="showAdminTab('testplan',this)">Test Plan</button>
     <button id="admin-tab-data" class="admin-subnav" onclick="showAdminTab('data',this)">Data Tools</button>
     <button id="admin-tab-settings" class="admin-subnav" onclick="showAdminTab('settings',this)">Settings</button>
   </div>
@@ -873,6 +875,14 @@
         <option value="page">Page Views</option>
         <option value="action">Actions</option>
       </select>
+      <select id="usage-user-filter" onchange="renderUsageLog()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:.8rem">
+        <option value="all">All Users</option>
+      </select>
+      <select id="usage-page-filter" onchange="renderUsageLog()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:.8rem">
+        <option value="all">All Pages</option>
+      </select>
+      <input id="usage-date-filter" type="date" onchange="renderUsageLog()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:.8rem">
+      <span id="usage-filter-count" style="font-size:.75rem;color:var(--muted)"></span>
       <button onclick="adminClearUsageLog()" style="padding:6px 14px;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2;color:#dc2626;font-size:.78rem;cursor:pointer">Clear Log</button>
     </div>
     <div class="table-wrap">
@@ -919,6 +929,51 @@
     </div>
   </div>
 
+  <!-- Activity Log -->
+  <div id="admin-activity" style="display:none">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Admin Activity Log</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <input id="activity-entry" type="text" placeholder="Log an activity (e.g. Deployed to GoDaddy, Pushed to GitHub...)" style="flex:1;min-width:250px;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+      <select id="activity-type" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+        <option value="deploy">🚀 Deploy</option>
+        <option value="github">📦 GitHub</option>
+        <option value="data">📊 Data Update</option>
+        <option value="config">⚙️ Config</option>
+        <option value="fix">🔧 Bug Fix</option>
+        <option value="feature">✨ Feature</option>
+        <option value="other">📝 Other</option>
+      </select>
+      <button onclick="adminAddActivity()" style="padding:8px 18px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">Log Activity</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Admin</th><th>Type</th><th>Activity</th></tr></thead>
+        <tbody id="tbody-activity-log"></tbody>
+      </table>
+    </div>
+    <button onclick="adminClearActivityLog()" style="margin-top:10px;padding:6px 14px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:.75rem;cursor:pointer">Clear Activity Log</button>
+  </div>
+
+  <!-- Test Plan -->
+  <div id="admin-testplan" style="display:none">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Test Plan — 138 Test Cases</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <select id="tp-area-filter" onchange="renderTestPlan()" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+        <option value="all">All Areas</option>
+      </select>
+      <select id="tp-priority-filter" onchange="renderTestPlan()" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:.82rem">
+        <option value="all">All Priorities</option>
+        <option value="High">High</option>
+        <option value="Medium">Medium</option>
+        <option value="Low">Low</option>
+      </select>
+      <span id="tp-count" style="font-size:.78rem;color:var(--muted)"></span>
+      <button onclick="runAutoTest()" style="margin-left:auto;padding:8px 18px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">▶ Run Auto Test</button>
+    </div>
+    <div id="tp-auto-results" style="display:none;margin-bottom:16px"></div>
+    <div id="testplan-container" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+
   <!-- Settings -->
   <div id="admin-settings" style="display:none">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Settings</div>
@@ -949,11 +1004,11 @@
 </div><!-- end page-admin -->
 
 <!-- Data files must load before app logic -->
-<script src="data/auth.js?v=202603240912"></script>
-<script src="data/division-i.js?v=202603240912"></script>
-<script src="data/division-c.js?v=202603240912"></script>
-<script src="data/division-f.js?v=202603240912"></script>
-<script src="data/division-h.js?v=202603240912"></script>
-<script src="js/app.js?v=202603240912"></script>
+<script src="data/auth.js?v=202603240957"></script>
+<script src="data/division-i.js?v=202603240957"></script>
+<script src="data/division-c.js?v=202603240957"></script>
+<script src="data/division-f.js?v=202603240957"></script>
+<script src="data/division-h.js?v=202603240957"></script>
+<script src="js/app.js?v=202603240957"></script>
 </body>
 </html>

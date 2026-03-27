@@ -24,7 +24,7 @@ if (!is_dir(DATA_DIR)) {
 }
 
 // Valid data types
-$VALID_TYPES = ['users', 'login', 'usage', 'settings'];
+$VALID_TYPES = ['users', 'login', 'usage', 'activity', 'settings'];
 
 // Admin password for auth
 define('ADMIN_PASSWORD', 'ramesh123');
@@ -86,7 +86,7 @@ switch ($action) {
             exit;
         }
         // Append operations (login/usage logging) don't require auth
-        $isAppend = isset($body['append']) && $body['append'] && in_array($type, ['login', 'usage']);
+        $isAppend = isset($body['append']) && $body['append'] && in_array($type, ['login', 'usage', 'activity']);
         if (!$isAppend && !isAuthenticated($body)) {
             echo json_encode(['ok' => false, 'error' => 'Authentication required']);
             exit;
@@ -108,6 +108,14 @@ switch ($action) {
             array_unshift($existing, $body['data']);
             if (count($existing) > 1000) $existing = array_slice($existing, 0, 1000);
             $result = saveData('usage', $existing);
+        }
+        // For activity log, append instead of replace
+        else if ($type === 'activity' && $isAppend) {
+            $existing = loadData('activity') ?? [];
+            if (!is_array($existing)) $existing = [];
+            array_unshift($existing, $body['data']);
+            if (count($existing) > 200) $existing = array_slice($existing, 0, 200);
+            $result = saveData('activity', $existing);
         }
         else {
             $result = saveData($type, $body['data']);

@@ -1418,7 +1418,7 @@ function showAdminTab(tab, btn) {
   document.querySelectorAll('.admin-subnav').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   // Toggle panels
-  ['users','login','usage','data','settings'].forEach(t => {
+  ['users','login','usage','activity','testplan','data','settings'].forEach(t => {
     const el = document.getElementById('admin-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
   });
@@ -1427,6 +1427,8 @@ function showAdminTab(tab, btn) {
   if (tab === 'usage') renderUsageLog();
   if (tab === 'data') { renderSeasonSummary(); renderStorageInfo(); }
   if (tab === 'users') renderAdminUsers();
+  if (tab === 'activity') renderActivityLog();
+  if (tab === 'testplan') renderTestPlan();
   _savePageState('admin', tab);
   if (typeof _logUsage === 'function') _logUsage('page', tab);
 }
@@ -1519,7 +1521,7 @@ const _USAGE_KEY = 'cdta2026_usage_log';
 function _friendlyPage(raw) {
   if (!raw) return '—';
   const divNames = { i:'Division I', f:'Division F', c:'Division C', h:'Division H', svg:'SVG Players', admin:'Admin' };
-  const pageNames = { standings:'Standings', projection:'Projection', schedule:'Schedule', results:'Results', players:'Players', stats:'Stats', teams:'Teams', keypairs:'Key Pairs', svgclub:'Club Performance', users:'Users', login:'Login History', usage:'Usage Log', data:'Data Tools', settings:'Settings' };
+  const pageNames = { standings:'Standings', projection:'Projection', schedule:'Schedule', results:'Results', players:'Players', stats:'Stats', teams:'Teams', keypairs:'Key Pairs', svgclub:'Club Performance', users:'Users', login:'Login History', usage:'Usage Log', activity:'Activity Log', testplan:'Test Plan', data:'Data Tools', settings:'Settings' };
   // From hash: "c/projection" or "svg/svgclub"
   const parts = raw.split('/');
   if (parts.length === 2) {
@@ -1557,8 +1559,43 @@ async function renderUsageLog() {
     const res = await _apiCall({ action:'load', type:'usage' });
     if (res && res.ok && res.data && Array.isArray(res.data)) log = res.data;
   }
-  const filter = document.getElementById('usage-log-filter');
-  const filtered = filter && filter.value !== 'all' ? log.filter(l => l.type === filter.value) : log;
+
+  // Populate user filter
+  const userFilter = document.getElementById('usage-user-filter');
+  if (userFilter) {
+    const users = [...new Set(log.map(l => l.user))].sort();
+    const cur = userFilter.value;
+    userFilter.innerHTML = '<option value="all">All Users</option>' + users.map(u => `<option value="${_esc(u)}">${_esc(u)}</option>`).join('');
+    userFilter.value = cur || 'all';
+  }
+
+  // Populate page filter
+  const pageFilter = document.getElementById('usage-page-filter');
+  if (pageFilter) {
+    const pages = [...new Set(log.map(l => _friendlyPage(l.page)).filter(p => p && p !== '—'))].sort();
+    const cur = pageFilter.value;
+    pageFilter.innerHTML = '<option value="all">All Pages</option>' + pages.map(p => `<option value="${_esc(p)}">${_esc(p)}</option>`).join('');
+    pageFilter.value = cur || 'all';
+  }
+
+  // Apply filters
+  const typeFilter = document.getElementById('usage-log-filter');
+  const dateFilter = document.getElementById('usage-date-filter');
+  const selType = typeFilter ? typeFilter.value : 'all';
+  const selUser = userFilter ? userFilter.value : 'all';
+  const selPage = pageFilter ? pageFilter.value : 'all';
+  const selDate = dateFilter ? dateFilter.value : '';
+
+  const filtered = log.filter(l => {
+    if (selType !== 'all' && l.type !== selType) return false;
+    if (selUser !== 'all' && l.user !== selUser) return false;
+    if (selPage !== 'all' && _friendlyPage(l.page) !== selPage) return false;
+    if (selDate) {
+      const entryDate = new Date(l.time).toISOString().slice(0, 10);
+      if (entryDate !== selDate) return false;
+    }
+    return true;
+  });
 
   // Stats
   const statsEl = document.getElementById('usage-stats');
@@ -1576,11 +1613,15 @@ async function renderUsageLog() {
     ].map(s => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 18px;text-align:center"><div style="font-family:'DM Mono',monospace;font-weight:700;font-size:1.1rem">${s.val}</div><div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">${s.lbl}</div></div>`).join('');
   }
 
+  // Filter count
+  const countEl = document.getElementById('usage-filter-count');
+  if (countEl) countEl.textContent = `Showing ${filtered.length} of ${log.length}`;
+
   const tbody = document.getElementById('tbody-usage-log');
   if (!tbody) return;
   tbody.innerHTML = filtered.length === 0
-    ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No usage data yet</td></tr>'
-    : filtered.slice(0, 100).map(l => {
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px">No usage data matching filters</td></tr>'
+    : filtered.slice(0, 200).map(l => {
       const d = new Date(l.time);
       const ts = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
       const typeColor = l.type === 'page' ? 'var(--accent2)' : 'var(--green)';
@@ -1594,6 +1635,336 @@ function adminClearUsageLog() {
   localStorage.removeItem(_USAGE_KEY);
   _apiCall({ action:'clear', type:'usage' });
   renderUsageLog();
+}
+
+// ─── ACTIVITY LOG ────────────────────────────────────────────────────────────
+const _ACTIVITY_KEY = 'cdta2026_activity_log';
+
+function adminAddActivity() {
+  const input = document.getElementById('activity-entry');
+  const typeEl = document.getElementById('activity-type');
+  const text = (input.value || '').trim();
+  if (!text) { input.focus(); return; }
+  const user = localStorage.getItem(SESSION_KEY) || 'admin';
+  const entry = { time: new Date().toISOString(), user, type: typeEl.value, text };
+  const log = JSON.parse(localStorage.getItem(_ACTIVITY_KEY) || '[]');
+  log.unshift(entry);
+  if (log.length > 200) log.length = 200;
+  localStorage.setItem(_ACTIVITY_KEY, JSON.stringify(log));
+  _apiCall({ action:'save', type:'activity', append:true, data:entry });
+  input.value = '';
+  renderActivityLog();
+}
+
+async function renderActivityLog() {
+  let log = JSON.parse(localStorage.getItem(_ACTIVITY_KEY) || '[]');
+  if (_IS_SERVER) {
+    const res = await _apiCall({ action:'load', type:'activity' });
+    if (res && res.ok && res.data && Array.isArray(res.data)) log = res.data;
+  }
+  const tbody = document.getElementById('tbody-activity-log');
+  if (!tbody) return;
+  const typeIcons = { deploy:'🚀', github:'📦', data:'📊', config:'⚙️', fix:'🔧', feature:'✨', other:'📝' };
+  const typeLabels = { deploy:'Deploy', github:'GitHub', data:'Data Update', config:'Config', fix:'Bug Fix', feature:'Feature', other:'Other' };
+  tbody.innerHTML = log.length === 0
+    ? '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">No activity logged yet</td></tr>'
+    : log.slice(0, 100).map(a => {
+      const d = new Date(a.time);
+      const ts = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      const icon = typeIcons[a.type] || '📝';
+      const label = typeLabels[a.type] || a.type;
+      return `<tr>
+        <td style="font-family:'DM Mono',monospace;font-size:.75rem;white-space:nowrap">${ts}</td>
+        <td style="font-weight:600">${_esc(a.user)}</td>
+        <td><span style="font-size:.75rem">${icon} ${_esc(label)}</span></td>
+        <td style="font-size:.82rem">${_esc(a.text)}</td>
+      </tr>`;
+    }).join('');
+}
+
+function adminClearActivityLog() {
+  if (!confirm('Clear all activity log entries?')) return;
+  localStorage.removeItem(_ACTIVITY_KEY);
+  _apiCall({ action:'clear', type:'activity' });
+  renderActivityLog();
+}
+
+// ─── TEST PLAN ──────────────────────────────────────────────────────────────
+const TEST_PLAN_DATA = [
+  { area:'Authentication', tests:[
+    { id:'AUTH-001', name:'Admin login', steps:'Enter rameshadmin / ramesh123, click Sign In', expected:'Login overlay hides, all tabs visible including Div H and Admin', priority:'High' },
+    { id:'AUTH-002', name:'Captain login (Div I)', steps:'Enter monish / monish2026, click Sign In', expected:'Auto-switches to Division I, only Div I + SVG visible', priority:'High' },
+    { id:'AUTH-003', name:'Captain login (Div F)', steps:'Enter sethupathy / sethupathy2026', expected:'Auto-switches to Division F, only Div F + SVG visible', priority:'High' },
+    { id:'AUTH-004', name:'Captain login (Div C)', steps:'Enter nagendran / nagendran2026', expected:'Auto-switches to Division C, only Div C + SVG visible', priority:'High' },
+    { id:'AUTH-005', name:'SVG Player login', steps:'Enter ramesh / ramesh2026', expected:'Div I + SVG visible, no Admin or Div H', priority:'High' },
+    { id:'AUTH-006', name:'Wrong password', steps:'Enter rameshadmin / wrongpass', expected:'Error message displayed, password cleared', priority:'High' },
+    { id:'AUTH-007', name:'Empty credentials', steps:'Click Sign In with empty fields', expected:'Error message displayed', priority:'Medium' },
+    { id:'AUTH-008', name:'Session persistence', steps:'Login, refresh page (F5)', expected:'User remains logged in, same page preserved', priority:'High' },
+    { id:'AUTH-009', name:'Logout', steps:'Login, click Sign Out', expected:'Login overlay shown, session cleared', priority:'High' },
+    { id:'AUTH-010', name:'Login event logged', steps:'Login as any user', expected:'Entry in Login History with timestamp, user, device', priority:'Medium' },
+  ]},
+  { area:'Role-Based Access', tests:[
+    { id:'RBAC-001', name:'Admin sees all divisions', steps:'Login as rameshadmin', expected:'All division tabs visible: SVG, I, F, C, H, Admin', priority:'High' },
+    { id:'RBAC-002', name:'Admin sees Rank tab', steps:'Login as admin, go to SVG Players', expected:'Three sub-tabs: Club Performance, Players, Rank', priority:'High' },
+    { id:'RBAC-003', name:'Captain sees own div only', steps:'Login as monish (Div I)', expected:'Only Div I + SVG visible; Div C, F, H, Admin hidden', priority:'High' },
+    { id:'RBAC-004', name:'Captain cannot see Rank', steps:'Login as captain, go to SVG', expected:'Rank button hidden', priority:'High' },
+    { id:'RBAC-005', name:'Div H admin-only', steps:'Login as captain', expected:'Division H button not visible', priority:'High' },
+    { id:'RBAC-006', name:'Admin tab restricted', steps:'Login as svgplayer', expected:'Admin button hidden', priority:'High' },
+  ]},
+  { area:'Navigation', tests:[
+    { id:'NAV-001', name:'Div I sub-pages', steps:'Click each nav: Standings, Projection, Teams, Schedule, Results, Players, Stats', expected:'Each page renders correctly, only one active', priority:'High' },
+    { id:'NAV-002', name:'Div C sub-pages', steps:'Switch to Div C, click each nav', expected:'Div C pages render with correct data', priority:'High' },
+    { id:'NAV-003', name:'Div F sub-pages', steps:'Switch to Div F, click each nav', expected:'Div F pages render correctly', priority:'High' },
+    { id:'NAV-004', name:'Div H sub-pages', steps:'Login as admin, switch to Div H', expected:'Div H pages render correctly', priority:'High' },
+    { id:'NAV-005', name:'Hash-based state', steps:'Navigate to Div F > Players, refresh', expected:'App restores to Div F > Players', priority:'Medium' },
+    { id:'NAV-006', name:'Admin sub-tabs', steps:'Click each admin tab', expected:'Correct panel shown, others hidden', priority:'Medium' },
+  ]},
+  { area:'Division I', tests:[
+    { id:'DIVI-001', name:'Standings table', steps:'Navigate to Div I > Standings', expected:'11 rows with Pts, Courts, Sets, Games columns', priority:'High' },
+    { id:'DIVI-002', name:'Standings sort', steps:'Click column headers', expected:'Rows re-sort correctly', priority:'Medium' },
+    { id:'DIVI-003', name:'Projection table', steps:'Go to Projection', expected:'Sorted by projected total, shows breakdown', priority:'High' },
+    { id:'DIVI-004', name:'Schedule all weeks', steps:'Go to Schedule', expected:'11 weeks, upcoming have UPCOMING badge', priority:'High' },
+    { id:'DIVI-005', name:'Results filters', steps:'Go to Results, use week/team filters', expected:'Filters work, court detail shown', priority:'High' },
+    { id:'DIVI-006', name:'Players search/filter', steps:'Search, team filter, gender filter, sort', expected:'All controls work correctly', priority:'High' },
+    { id:'DIVI-007', name:'Players partner data', steps:'Check player with appearances', expected:'Partners column shows names with counts', priority:'Medium' },
+    { id:'DIVI-008', name:'Stats and key pairs', steps:'Go to Stats', expected:'Demographics, walkover summary, key pairs table', priority:'Medium' },
+    { id:'DIVI-009', name:'Teams directory', steps:'Go to Teams', expected:'11 teams with captain phone, club, surface', priority:'Medium' },
+  ]},
+  { area:'Division C', tests:[
+    { id:'DIVC-001', name:'Standings (Week 9)', steps:'Go to Div C > Standings', expected:'11 teams, updated after Week 9 results', priority:'High' },
+    { id:'DIVC-002', name:'Week 9 results present', steps:'Go to Div C > Results', expected:'Week 9: all 6 matches have scores and court detail', priority:'High' },
+    { id:'DIVC-003', name:'Projection updated', steps:'Go to Projection', expected:'Current pts reflect Week 9 results', priority:'Medium' },
+    { id:'DIVC-004', name:'Players updated', steps:'Go to Players, check SVG-C players', expected:'Player stats include Week 9 appearances', priority:'Medium' },
+  ]},
+  { area:'Division F', tests:[
+    { id:'DIVF-001', name:'Standings (Week 9)', steps:'Go to Div F > Standings', expected:'11 teams, Week 9 complete', priority:'High' },
+    { id:'DIVF-002', name:'Week 9 results', steps:'Go to Results', expected:'5 Week 9 matches with court detail', priority:'High' },
+    { id:'DIVF-003', name:'ACES highlight', steps:'View standings', expected:'ACES row has SVG CLUB badge', priority:'Medium' },
+  ]},
+  { area:'Division H', tests:[
+    { id:'DIVH-001', name:'Admin-only access', steps:'Login as captain', expected:'Div H button hidden', priority:'High' },
+    { id:'DIVH-002', name:'Standings render', steps:'Login as admin, go to Div H', expected:'11 teams, Week 8 data', priority:'High' },
+    { id:'DIVH-003', name:'Results with filters', steps:'Go to Results, use filters', expected:'8 weeks of completed results', priority:'Medium' },
+    { id:'DIVH-004', name:'Teams (limited data)', steps:'Go to Teams', expected:'Teams listed, no captain phone (known limitation)', priority:'Low' },
+  ]},
+  { area:'SVG Players', tests:[
+    { id:'SVG-001', name:'Club Performance default', steps:'Switch to SVG Players', expected:'Club Performance tab active with 4 team cards', priority:'High' },
+    { id:'SVG-002', name:'Players merged table', steps:'Click Players tab', expected:'All SVG players from 4 teams across 3 divisions', priority:'High' },
+    { id:'SVG-003', name:'Team filter buttons', steps:'Click each team filter button', expected:'Table filters to selected team only', priority:'High' },
+    { id:'SVG-004', name:'Rank tab (admin)', steps:'Login as admin, click Rank', expected:'4-tier ranking: Elite/Strong/Developing/Rising', priority:'Medium' },
+    { id:'SVG-005', name:'Rank hidden for non-admin', steps:'Login as captain, check SVG tabs', expected:'Rank button not visible', priority:'High' },
+  ]},
+  { area:'Admin Panel', tests:[
+    { id:'ADM-001', name:'User Management list', steps:'Go to Admin > Users', expected:'All users listed with role, division, team', priority:'High' },
+    { id:'ADM-002', name:'Add new user', steps:'Fill form, click Add', expected:'New user appears, can login', priority:'High' },
+    { id:'ADM-003', name:'Delete user', steps:'Click delete on non-default user', expected:'User removed after confirmation', priority:'Medium' },
+    { id:'ADM-004', name:'Login History', steps:'Go to Login History tab', expected:'Entries with time, user, action, IP, device, browser', priority:'High' },
+    { id:'ADM-005', name:'Usage Log', steps:'Go to Usage Log tab', expected:'Page visits with friendly names (Division I — Standings)', priority:'High' },
+    { id:'ADM-006', name:'Usage Log page tracking', steps:'Navigate various pages, check log', expected:'All page visits captured for all users', priority:'High' },
+    { id:'ADM-007', name:'Activity Log', steps:'Log an activity, check table', expected:'Entry saved with timestamp, type, text', priority:'Medium' },
+    { id:'ADM-008', name:'Test Plan', steps:'Go to Test Plan tab', expected:'All test cases rendered, filterable by area and priority', priority:'Medium' },
+    { id:'ADM-009', name:'Data Tools integrity', steps:'Click Run Check', expected:'All divisions: 0 mismatches', priority:'High' },
+    { id:'ADM-010', name:'Settings persist', steps:'Change week badge, refresh', expected:'Setting persists on reload', priority:'Medium' },
+  ]},
+  { area:'Server Persistence', tests:[
+    { id:'SRV-001', name:'Login history on server', steps:'Login on GoDaddy, check admin-data/login.json', expected:'Entry saved with device info', priority:'High' },
+    { id:'SRV-002', name:'Usage log on server', steps:'Navigate pages, check usage.json', expected:'Page visits saved to server', priority:'High' },
+    { id:'SRV-003', name:'Activity log on server', steps:'Log activity, check activity.json', expected:'Activity saved to server', priority:'Medium' },
+    { id:'SRV-004', name:'Cross-device visibility', steps:'Add user on Device A, check on Device B', expected:'User available on both devices', priority:'High' },
+  ]},
+  { area:'Cache & Performance', tests:[
+    { id:'CACHE-001', name:'Version params on JS/CSS', steps:'Inspect script/link tags', expected:'All have ?v= parameter', priority:'High' },
+    { id:'CACHE-002', name:'No-cache headers', steps:'Inspect meta tags', expected:'Cache-Control, Pragma, Expires headers present', priority:'Medium' },
+    { id:'CACHE-003', name:'Fresh load after deploy', steps:'Deploy, reload without private browser', expected:'Latest code loaded, no stale cache', priority:'High' },
+  ]},
+  { area:'Data Integrity', tests:[
+    { id:'DATA-001', name:'Audit script passes', steps:'Run node audit-partners.js', expected:'0 mismatches for all divisions', priority:'High' },
+    { id:'DATA-002', name:'Standings match results', steps:'Sum court wins from schedule', expected:'Matches standings pts for each team', priority:'High' },
+    { id:'DATA-003', name:'Projection math', steps:'Verify projected = current + expected', expected:'Values consistent', priority:'Medium' },
+    { id:'DATA-004', name:'XSS prevention', steps:'Enter <script>alert(1)</script> in search', expected:'HTML escaped, no execution', priority:'Medium' },
+  ]},
+];
+
+function renderTestPlan() {
+  const container = document.getElementById('testplan-container');
+  const areaFilter = document.getElementById('tp-area-filter');
+  const prioFilter = document.getElementById('tp-priority-filter');
+  const countEl = document.getElementById('tp-count');
+  if (!container) return;
+
+  // Populate area filter on first call
+  if (areaFilter && areaFilter.options.length <= 1) {
+    TEST_PLAN_DATA.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.area; opt.textContent = a.area;
+      areaFilter.appendChild(opt);
+    });
+  }
+
+  const selArea = areaFilter ? areaFilter.value : 'all';
+  const selPrio = prioFilter ? prioFilter.value : 'all';
+  const priColor = { High:'var(--red)', Medium:'var(--accent)', Low:'var(--muted)' };
+
+  let total = 0, shown = 0;
+  let html = '';
+  TEST_PLAN_DATA.forEach(area => {
+    const tests = area.tests.filter(t => {
+      total++;
+      if (selArea !== 'all' && selArea !== area.area) return false;
+      if (selPrio !== 'all' && selPrio !== t.priority) return false;
+      shown++;
+      return true;
+    });
+    if (tests.length === 0) return;
+    html += `<div style="margin-bottom:20px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.85rem;color:var(--accent);letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase">${_esc(area.area)} (${tests.length})</div>
+      <div class="table-wrap"><table style="font-size:.8rem">
+        <thead><tr><th style="width:70px">ID</th><th>Test Case</th><th>Steps</th><th>Expected Result</th><th style="width:60px">Priority</th></tr></thead>
+        <tbody>${tests.map(t => `<tr>
+          <td style="font-family:'DM Mono',monospace;font-size:.72rem;font-weight:600;white-space:nowrap">${_esc(t.id)}</td>
+          <td style="font-weight:600">${_esc(t.name)}</td>
+          <td style="color:var(--muted);font-size:.78rem">${_esc(t.steps)}</td>
+          <td style="font-size:.78rem">${_esc(t.expected)}</td>
+          <td><span style="color:${priColor[t.priority]||'var(--muted)'};font-weight:700;font-size:.7rem;text-transform:uppercase">${_esc(t.priority)}</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  });
+
+  container.innerHTML = html || '<div style="text-align:center;color:var(--muted);padding:30px">No test cases match the filters</div>';
+  if (countEl) countEl.textContent = `Showing ${shown} of ${total} test cases`;
+}
+
+async function runAutoTest() {
+  const el = document.getElementById('tp-auto-results');
+  if (!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<div style="padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px"><div style="font-weight:600;margin-bottom:8px">⏳ Running automated tests...</div><div id="tp-auto-progress"></div></div>';
+  const prog = document.getElementById('tp-auto-progress');
+  const results = [];
+  let pass = 0, fail = 0, skip = 0;
+
+  function log(id, name, status, detail) {
+    const color = status === 'PASS' ? 'var(--green)' : status === 'FAIL' ? 'var(--red)' : 'var(--muted)';
+    results.push({ id, name, status, detail });
+    if (status === 'PASS') pass++; else if (status === 'FAIL') fail++; else skip++;
+    prog.innerHTML += `<div style="font-size:.78rem;padding:2px 0"><span style="font-family:'DM Mono',monospace;font-size:.7rem;width:80px;display:inline-block">${id}</span> <span style="color:${color};font-weight:700;font-size:.7rem;width:36px;display:inline-block">${status}</span> ${_esc(name)} ${detail ? '<span style="color:var(--muted);font-size:.7rem">— '+_esc(detail)+'</span>' : ''}</div>`;
+  }
+
+  // AUTH tests
+  log('AUTH-001', 'Admin user exists', USERS['rameshadmin'] ? 'PASS' : 'FAIL', USERS['rameshadmin'] ? 'rameshadmin found' : '');
+  log('AUTH-002', 'Captain monish exists', USERS['monish'] ? 'PASS' : 'FAIL', '');
+  log('AUTH-003', 'Captain sethupathy exists', USERS['sethupathy'] ? 'PASS' : 'FAIL', '');
+  log('AUTH-004', 'Captain nagendran exists', USERS['nagendran'] ? 'PASS' : 'FAIL', '');
+  log('AUTH-005', 'SVG Player ramesh exists', USERS['ramesh'] ? 'PASS' : 'FAIL', '');
+  log('AUTH-006', '6 default users', Object.keys(USERS).length >= 6 ? 'PASS' : 'FAIL', Object.keys(USERS).length + ' users');
+
+  // RBAC tests
+  const adminUser = USERS['rameshadmin'];
+  log('RBAC-001', 'Admin role = admin', adminUser && adminUser.role === 'admin' ? 'PASS' : 'FAIL', '');
+  log('RBAC-002', 'Captain role = captain', USERS['monish'] && USERS['monish'].role === 'captain' ? 'PASS' : 'FAIL', '');
+  log('RBAC-003', 'SVG role = svgplayer', USERS['ramesh'] && USERS['ramesh'].role === 'svgplayer' ? 'PASS' : 'FAIL', '');
+  log('RBAC-004', 'Div H button exists', document.getElementById('btn-div-h') ? 'PASS' : 'FAIL', '');
+  log('RBAC-005', 'Admin button exists', document.getElementById('btn-admin') ? 'PASS' : 'FAIL', '');
+
+  // Data tests
+  log('DATA-001', 'Div I: 11 teams in standings', DIV_I_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_I_STANDINGS.length + ' teams');
+  log('DATA-002', 'Div C: 11 teams in standings', DIV_C_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_C_STANDINGS.length + ' teams');
+  log('DATA-003', 'Div F: 11 teams in standings', DIV_F_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_F_STANDINGS.length + ' teams');
+  log('DATA-004', 'Div H: 11 teams in standings', DIV_H_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_H_STANDINGS.length + ' teams');
+
+  log('DATA-005', 'Div I: 11 teams array', DIV_I_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_I_TEAMS.length + ' teams');
+  log('DATA-006', 'Div C: 11 teams array', DIV_C_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_C_TEAMS.length + ' teams');
+  log('DATA-007', 'Div F: 11 teams array', DIV_F_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_F_TEAMS.length + ' teams');
+  log('DATA-008', 'Div H: 11 teams array', DIV_H_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_H_TEAMS.length + ' teams');
+
+  // Schedule tests
+  [['I', DIV_I_SCHEDULE], ['C', DIV_C_SCHEDULE], ['F', DIV_F_SCHEDULE], ['H', DIV_H_SCHEDULE]].forEach(([d, sched]) => {
+    log('DATA-SCH-'+d, 'Div '+d+': 11 weeks in schedule', sched.length === 11 ? 'PASS' : 'FAIL', sched.length + ' weeks');
+  });
+
+  // Projection tests
+  [['I', DIV_I_PROJECTIONS, DIV_I_STANDINGS], ['C', DIV_C_PROJECTIONS, DIV_C_STANDINGS], ['F', DIV_F_PROJECTIONS, DIV_F_STANDINGS], ['H', DIV_H_PROJECTIONS, DIV_H_STANDINGS]].forEach(([d, proj, stand]) => {
+    log('DATA-PRJ-'+d, 'Div '+d+': projections count', proj.length === 11 ? 'PASS' : 'FAIL', proj.length + ' entries');
+    // Check current pts match standings
+    let mismatch = 0;
+    proj.forEach(p => {
+      const s = stand.find(x => x.short === p.short);
+      if (s && s.pts !== p.current) mismatch++;
+    });
+    log('DATA-PTS-'+d, 'Div '+d+': projection pts match standings', mismatch === 0 ? 'PASS' : 'FAIL', mismatch > 0 ? mismatch + ' mismatches' : '');
+  });
+
+  // Player count tests
+  log('DATA-PLR-I', 'Div I: players array populated', DIV_I_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_I_PLAYERS.length + ' players');
+  log('DATA-PLR-C', 'Div C: players array populated', DIV_C_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_C_PLAYERS.length + ' players');
+  log('DATA-PLR-F', 'Div F: players array populated', DIV_F_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_F_PLAYERS.length + ' players');
+  log('DATA-PLR-H', 'Div H: players array populated', DIV_H_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_H_PLAYERS.length + ' players');
+
+  // DOM element tests
+  const domIds = ['tbody-standings','tbody-divc-standings','tbody-divf-standings','tbody-divh-standings','tbody-teams','page-admin','login-overlay'];
+  domIds.forEach(id => {
+    log('DOM-'+id.substring(0,12), 'Element #'+id+' exists', document.getElementById(id) ? 'PASS' : 'FAIL', '');
+  });
+
+  // Completed weeks count
+  [['I', DIV_I_SCHEDULE], ['C', DIV_C_SCHEDULE], ['F', DIV_F_SCHEDULE], ['H', DIV_H_SCHEDULE]].forEach(([d, sched]) => {
+    const done = sched.filter(w => w.done).length;
+    log('WK-DONE-'+d, 'Div '+d+': completed weeks', done >= 8 ? 'PASS' : 'FAIL', done + ' of 11 done');
+  });
+
+  // Court data integrity (sample: check each completed match has 3 courts)
+  [['I', DIV_I_SCHEDULE], ['C', DIV_C_SCHEDULE], ['F', DIV_F_SCHEDULE]].forEach(([d, sched]) => {
+    let bad = 0, checked = 0;
+    sched.forEach(wk => {
+      if (!wk.done) return;
+      wk.matches.forEach(m => {
+        if (!m.score || m.rest) return;
+        checked++;
+        if (!m.courts || m.courts.length !== 3) bad++;
+      });
+    });
+    log('COURT-'+d, 'Div '+d+': 3 courts per match', bad === 0 ? 'PASS' : 'FAIL', checked + ' matches checked' + (bad > 0 ? ', '+bad+' bad' : ''));
+  });
+
+  // XSS escape test
+  const xss = _esc('<script>alert(1)</script>');
+  log('XSS-001', 'XSS escape function', xss.indexOf('<script>') === -1 ? 'PASS' : 'FAIL', '');
+
+  // Server API test
+  if (_IS_SERVER) {
+    try {
+      const res = await fetch('api/admin-data.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'load',type:'settings'}) });
+      const data = await res.json();
+      log('SRV-001', 'Server API reachable', data.ok !== undefined ? 'PASS' : 'FAIL', '');
+    } catch(e) {
+      log('SRV-001', 'Server API reachable', 'FAIL', e.message);
+    }
+  } else {
+    log('SRV-001', 'Server API (local mode)', 'SKIP', 'Not on server');
+  }
+
+  // Summary
+  const total = pass + fail + skip;
+  const pct = Math.round((pass / (pass + fail)) * 100);
+  const summaryColor = fail === 0 ? 'var(--green)' : fail <= 3 ? 'var(--accent)' : 'var(--red)';
+  el.innerHTML = `<div style="padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px">
+    <div style="display:flex;gap:16px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-weight:700;font-size:1rem">Test Results</div>
+      <div style="display:flex;gap:12px">
+        <span style="color:var(--green);font-weight:700">✓ ${pass} Passed</span>
+        <span style="color:var(--red);font-weight:700">✗ ${fail} Failed</span>
+        ${skip > 0 ? `<span style="color:var(--muted);font-weight:600">⊘ ${skip} Skipped</span>` : ''}
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:.85rem;color:${summaryColor};font-weight:700">${pct}% Pass Rate</div>
+      <button onclick="runAutoTest()" style="margin-left:auto;padding:6px 14px;background:var(--accent2);color:#fff;border:none;border-radius:6px;font-size:.75rem;cursor:pointer">Re-run</button>
+    </div>
+    ${fail > 0 ? `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2);border-radius:6px;font-size:.78rem"><strong style="color:var(--red)">Failed Tests:</strong> ${results.filter(r=>r.status==='FAIL').map(r=>`<span style="font-family:'DM Mono',monospace;font-size:.72rem">${_esc(r.id)}</span> ${_esc(r.name)}${r.detail?' ('+_esc(r.detail)+')':''}`).join(' · ')}</div>` : ''}
+    <details><summary style="cursor:pointer;font-size:.8rem;color:var(--muted);margin-bottom:8px">Full Results (${total} tests)</summary>${prog.innerHTML}</details>
+  </div>`;
+
+  // Log to activity
+  if (typeof _logUsage === 'function') _logUsage('action', 'Auto Test: ' + pass + '/' + total + ' passed');
 }
 
 // ─── DATA TOOLS ──────────────────────────────────────────────────────────────
