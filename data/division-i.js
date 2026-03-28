@@ -17,11 +17,11 @@ const DIV_I_TEAMS = [
 const DIV_I_STANDINGS = [
   { rank:1,  short:'SATCH',  full:'SATCHIDANANDA',   pts:24, played:8, w:8, l:0, setsW:48, setsL:3,  gamesW:286, gamesL:89  },
   { rank:2,  short:'TTOTS',  full:'TenniMaSh Tots',  pts:23, played:8, w:8, l:0, setsW:46, setsL:4,  gamesW:267, gamesL:84  },
-  { rank:3,  short:'STARS',  full:'SREEVATSA STARS', pts:17, played:8, w:6, l:2, setsW:35, setsL:17, gamesW:224, gamesL:134 },
+  { rank:3,  short:'STARS',  full:'SREEVATSA STARS', pts:20, played:9, w:7, l:2, setsW:41, setsL:17, gamesW:261, gamesL:150 },
   { rank:4,  short:'RAIL',   full:'S RAILWAY - B',   pts:14, played:8, w:5, l:3, setsW:30, setsL:23, gamesW:196, gamesL:168 },
   { rank:5,  short:'CBE',    full:'CBE CLUB - C',    pts:13, played:8, w:5, l:3, setsW:28, setsL:24, gamesW:233, gamesL:193 },
   { rank:6,  short:'TGLO',   full:'TENNIGLO - D',    pts:12, played:8, w:5, l:3, setsW:23, setsL:23, gamesW:189, gamesL:170 },
-  { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)',pts:9,  played:8, w:3, l:5, setsW:21, setsL:31, gamesW:192, gamesL:251 },
+  { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)',pts:9,  played:9, w:3, l:6, setsW:21, setsL:37, gamesW:208, gamesL:288 },
   { rank:8,  short:'GNEST',  full:'GREEN NEST - B',  pts:8,  played:9, w:2, l:7, setsW:19, setsL:32, gamesW:154, gamesL:219 },
   { rank:9,  short:'CHAMPS', full:'SVG Champs',      pts:8,  played:9, w:2, l:7, setsW:18, setsL:39, gamesW:162, gamesL:264 },
   { rank:10, short:'SAI',    full:'SAI TENNIS - B',  pts:4,  played:8, w:1, l:7, setsW:9,  setsL:43, gamesW:89,  gamesL:260 },
@@ -31,11 +31,11 @@ const DIV_I_STANDINGS = [
 const DIV_I_PROJECTIONS = [
   { rank:1,  short:'SATCH',  full:'SATCHIDANANDA',    current:24, expected:4.3,  projected:28.3, min:24,   max:30 },
   { rank:2,  short:'TTOTS',  full:'TenniMaSh Tots',   current:23, expected:4.3,  projected:27.3, min:23,   max:29 },
-  { rank:3,  short:'STARS',  full:'SREEVATSA STARS',  current:17, expected:4.0,  projected:21.0, min:17,   max:23 },
+  { rank:3,  short:'STARS',  full:'SREEVATSA STARS',  current:20, expected:2.0,  projected:22.0, min:20,   max:23 },
   { rank:4,  short:'RAIL',   full:'S RAILWAY - B',    current:14, expected:3.5,  projected:17.5, min:14,   max:20 },
   { rank:5,  short:'CBE',    full:'CBE CLUB - C',     current:13, expected:2.0,  projected:15.0, min:13,   max:19 },
   { rank:6,  short:'TGLO',   full:'TENNIGLO - D',     current:12, expected:2.0,  projected:14.0, min:12,   max:18 },
-  { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)', current:9,  expected:3.5,  projected:12.5, min:9,    max:15 },
+  { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)', current:9,  expected:2.0,  projected:11.0, min:9,    max:12 },
   { rank:8,  short:'CHAMPS', full:'SVG Champs',       current:8,  expected:2.0,  projected:10.0, min:8,    max:11 },
   { rank:9,  short:'GNEST',  full:'GREEN NEST - B',   current:8,  expected:0.5,  projected:8.5,  min:8,    max:9  },
   { rank:10, short:'SAI',    full:'SAI TENNIS - B',   current:4,  expected:2.5,  projected:6.5,  min:4,    max:10 },
@@ -457,7 +457,12 @@ const DIV_I_SCHEDULE = [
     { home:'GREEN NEST - B', score:null, away:'TenniMaSh Tots', venue:'Green Nest Sports Academy', courts:[] },
     { home:'S RAILWAY - B', score:null, away:'TENNIGLO - D', venue:'S Railway', courts:[] },
     { home:'SAI TENNIS - B', score:null, away:'Kingsberry Tennis', venue:'Sai Tennis Academy', courts:[] },
-    { home:'SNS-C(AS TENNIS)', score:null, away:'SREEVATSA STARS', venue:'SNS Tennis Academy', courts:[] },
+    { home:'SNS-C(AS TENNIS)', score:'0-3', away:'SREEVATSA STARS', venue:'SNS Tennis Academy',
+      courts:[
+        { ct:1, home:'Harsha M K / Jaswanth M K', away:'Senthil / Suryaa', sets:'1-6, 5-7', win:'away' },
+        { ct:2, home:'Jeganath R / Rajesh K', away:'Monish / Chandrasekar', sets:'3-6, 2-6', win:'away' },
+        { ct:3, home:'Sai Sankar Mohana Kesavan / Prabhakaran V', away:'Ramesh / Shankar V', sets:'4-6, 1-6', win:'away' }
+      ]},
   ]},
   { week:11, date:'04-05 Apr 2026', done:false, title:'Title Decider Week', matches:[
     { home:'TenniMaSh Tots', score:null, away:'SATCHIDANANDA', venue:'TenniMaSh Academy', titleMatch:true, courts:[] },
