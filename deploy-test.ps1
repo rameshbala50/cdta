@@ -98,5 +98,5 @@ Write-Host " Upload Complete: $ok OK, $fail FAILED" -ForegroundColor Cyan
 Write-Host "===============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Access test deployment at:" -ForegroundColor Yellow
-Write-Host "  http://akilanramesh.com/cdta-test/" -ForegroundColor Cyan
+Write-Host "  http://akilanramesh.com/cdta-workver/" -ForegroundColor Cyan
 Write-Host ""
