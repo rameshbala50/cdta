@@ -1,5 +1,6 @@
 # Credentials
 deploy.env
+deploy-test.env
 
 # OS files
 .DS_Store
