@@ -31,14 +31,17 @@ Write-Host " URL: http://akilanramesh.com$FTP_REMOTE_DIR"
 Write-Host ""
 
 # Files to exclude
-$exclude = @("deploy.bat","deploy.ps1","deploy.env","deploy-test.bat","deploy-test.ps1","deploy-test.env","cdta2026_dashboard_w8.html","cdta2026_discussion_w8.md",".gitignore")
+$exclude = @("deploy.bat","deploy.ps1","deploy.env","deploy-test.bat","deploy-test.ps1","deploy-test.env","cdta2026_dashboard_w8.html","cdta2026_discussion_w8.md",".gitignore","download-photos.ps1")
+
+# Skip photos directory (uploaded separately)
+$skipPhotos = $true
 
 # Collect files
 $root = $PSScriptRoot
 $files = @()
 Get-ChildItem -Path $root -Recurse -File | ForEach-Object {
     $rel = $_.FullName.Substring($root.Length + 1).Replace('\','/')
-    if ($exclude -notcontains $rel -and $rel -notmatch '^\.' ) {
+    if ($exclude -notcontains $rel -and $rel -notmatch '^\.' -and (!$skipPhotos -or $rel -notmatch '^photos/')) {
         $files += $rel
     }
 }

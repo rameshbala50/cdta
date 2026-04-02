@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Coimbatore District Tennis Association – CDTA 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=202603281211">
+<link rel="stylesheet" href="css/main.css?v=202604021821">
 </head>
 <body>
 
@@ -897,6 +897,37 @@
   <div id="admin-data" style="display:none">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Data Tools</div>
 
+    <!-- Data Load from CDTA League -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-weight:600;font-size:.85rem;margin-bottom:8px">Load Match Data from CDTA League</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Fetches completed match results from league.cdta.co.in for the selected week and division</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px">
+        <div>
+          <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Week</label>
+          <select id="dl-week" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:120px">
+            <option value="10">Week 10</option>
+            <option value="9">Week 9</option>
+            <option value="8">Week 8</option>
+            <option value="11">Week 11</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Division</label>
+          <select id="dl-division" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:160px">
+            <option value="all">All Divisions</option>
+            <option value="I">Division I</option>
+            <option value="C">Division C</option>
+            <option value="F">Division F</option>
+            <option value="H">Division H</option>
+          </select>
+        </div>
+        <button id="dl-load-btn" onclick="adminLoadMatchData()" style="padding:8px 20px;background:var(--accent2);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">🔄 Load Data</button>
+        <button id="dl-stop-btn" onclick="adminStopLoad()" style="padding:8px 20px;background:var(--red);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;display:none">⏹ Stop</button>
+      </div>
+      <div id="dl-progress" style="font-size:.78rem;color:var(--muted);min-height:1.2em"></div>
+      <div id="dl-log" style="max-height:400px;overflow-y:auto;font-family:'DM Mono',monospace;font-size:.75rem;line-height:1.6;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;display:none"></div>
+    </div>
+
     <!-- Data Integrity Check -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
       <div style="font-weight:600;font-size:.85rem;margin-bottom:8px">Data Integrity Check</div>
@@ -1004,11 +1035,11 @@
 </div><!-- end page-admin -->
 
 <!-- Data files must load before app logic -->
-<script src="data/auth.js?v=202603281211"></script>
-<script src="data/division-i.js?v=202603281211"></script>
-<script src="data/division-c.js?v=202603281211"></script>
-<script src="data/division-f.js?v=202603281211"></script>
-<script src="data/division-h.js?v=202603281211"></script>
-<script src="js/app.js?v=202603281211"></script>
+<script src="data/auth.js?v=202604021821"></script>
+<script src="data/division-i.js?v=202604021821"></script>
+<script src="data/division-c.js?v=202604021821"></script>
+<script src="data/division-f.js?v=202604021821"></script>
+<script src="data/division-h.js?v=202604021821"></script>
+<script src="js/app.js?v=202604021821"></script>
 </body>
 </html>

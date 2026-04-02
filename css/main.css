@@ -143,6 +143,18 @@ tbody tr:nth-child(even):hover { background:rgba(37,99,235,.06); }
 .pill-red   { background:rgba(220,38,38,.12);  color:var(--red); }
 .pill-gray  { background:rgba(100,116,139,.12); color:var(--muted); }
 .pill-gold  { background:rgba(217,119,6,.15);  color:var(--cap); }
+.player-photo { width:32px; height:32px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-right:8px; border:2px solid var(--border); }
+tbody tr.standing-promote, tbody tr.standing-promote:nth-child(even) { background:rgba(22,163,74,.12) !important; }
+tbody tr.standing-promote td { color:#15803d; font-weight:600; }
+tbody tr.standing-promote td:first-child { border-left:3px solid #16a34a; }
+tbody tr.standing-medal, tbody tr.standing-medal:nth-child(even) { background:rgba(202,138,4,.08) !important; }
+tbody tr.standing-medal td:first-child { border-left:3px solid #ca8a04; }
+tbody tr.standing-demote, tbody tr.standing-demote:nth-child(even) { background:rgba(220,38,38,.10) !important; }
+tbody tr.standing-demote td { color:#dc2626; font-weight:600; }
+tbody tr.standing-demote td:first-child { border-left:3px solid #dc2626; }
+.rank-promote { font-size:.8rem; }
+.rank-medal { font-size:.8rem; }
+.rank-demote { color:#dc2626; font-weight:700; font-size:.85rem; }
 .win-bar-wrap { display:flex; align-items:center; gap:8px; }
 .win-bar { height:7px; border-radius:4px; background:var(--border); width:60px; overflow:hidden; }
 .win-bar-fill { height:100%; background:linear-gradient(90deg,#22c55e,#16a34a); border-radius:4px; transition:width .5s ease; }

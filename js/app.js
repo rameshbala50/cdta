@@ -49,11 +49,25 @@ function showPage(name, btn) {
 }
 
 // ─── DIV_I_STANDINGS ───────────────────────────────────────────────────────────────
+function _standingIcon(rank, total) {
+  if (rank <= 2) return '<span class="rank-promote" title="Promoted">🏆</span>';
+  if (rank === 3) return '<span class="rank-medal" title="Medal">🏅</span>';
+  if (rank >= total - 1) return '<span class="rank-demote" title="Demoted">↓</span>';
+  return '';
+}
+function _standingRowClass(rank, total) {
+  if (rank <= 2) return ' class="standing-promote"';
+  if (rank === 3) return ' class="standing-medal"';
+  if (rank >= total - 1) return ' class="standing-demote"';
+  return '';
+}
+
 function renderStandings() {
   const tb = document.getElementById('tbody-standings');
+  const total = DIV_I_STANDINGS.length;
   tb.innerHTML = DIV_I_STANDINGS.map(s => `
-    <tr>
-      <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank}</td>
+    <tr${_standingRowClass(s.rank, total)}>
+      <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
       <td><span class="team-badge">${s.short}</span> ${s.full}</td>
       <td class="pts-cell">${s.pts}</td>
       <td>${s.played}</td>
@@ -180,11 +194,13 @@ function renderTeams() {
     const clubCell = shared
       ? `<td><span style="color:var(--accent);font-weight:600">${t.club}</span> <span style="font-size:.62rem;background:rgba(184,122,16,.15);color:var(--accent);padding:1px 6px;border-radius:3px;letter-spacing:.5px">${count} TEAMS</span></td>`
       : `<td style="color:var(--muted);font-size:.82rem">${t.club}</td>`;
+    const capPlayer = DIV_I_PLAYERS.find(p => p.team === t.short && p.role === 'Captain');
+    const capPhoto = capPlayer && capPlayer.photo ? `<img src="${_esc(capPlayer.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr>
       <td class="rank-cell">${i+1}</td>
       <td><strong>${t.full}</strong></td>
       <td><span class="team-badge">${t.short}</span></td>
-      <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span>${t.mobile ? '<br><a href="tel:'+_esc(t.mobile)+'" style="font-size:.7rem;color:var(--muted);font-family:\'DM Mono\',monospace">📞 '+_esc(t.mobile)+'</a>' : ''}</td>
+      <td>${capPhoto}${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span>${t.mobile ? '<br><a href="tel:'+_esc(t.mobile)+'" style="font-size:.7rem;color:var(--muted);font-family:\'DM Mono\',monospace">📞 '+_esc(t.mobile)+'</a>' : ''}</td>
       ${clubCell}
       <td><span style="font-size:.72rem;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:.5px;background:${t.surface==='Clay'?'rgba(180,100,30,.12)':'rgba(37,99,235,.1)'};color:${t.surface==='Clay'?'#a05a1a':'var(--accent2)'}">${t.surface||'—'}</span></td>
       <td>${t.players}</td>
@@ -354,7 +370,8 @@ function renderPlayers() {
     const barW = pct !== null ? pct : 0;
     const losses = hasData ? p.gamesPlayed - p.wins : null;
     const capTag = p.role==='Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
-    const nameDisp = p.name + (p.age===80?' 🏅':p.age===10?' ⭐':'') + capTag;
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const nameDisp = photoHtml + p.name + (p.age===80?' 🏅':p.age===10?' ⭐':'') + capTag;
     const winsDisplay = hasData
       ? `<span style="color:var(--green)">${p.wins}W</span>${losses > 0 ? ` <span style="color:var(--red)">${losses}L</span>` : ''}`
       : '<span style="color:var(--muted)">—</span>';
@@ -613,10 +630,11 @@ function renderDivCStats() {
 function renderDivCStandings() {
   const tb = document.getElementById('tbody-divc-standings');
   if (!tb) return;
+  const total = DIV_C_STANDINGS.length;
   tb.innerHTML = DIV_C_STANDINGS.map(s => {
     const isBlues = s.short === 'SVG-C';
-    return `<tr ${isBlues ? 'style="background:#fffbeb;border-left:3px solid var(--accent)"' : ''}>
-      <td class="rank-cell ${s.rank<=4?'top3':''}">${s.rank}</td>
+    return `<tr${_standingRowClass(s.rank, total)}>
+      <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
       <td>
         <span class="team-badge">${s.short}</span> ${s.full}
         ${isBlues ? '<span style="font-size:.62rem;color:var(--accent);background:rgba(184,122,16,.15);padding:2px 7px;border-radius:3px;margin-left:4px">SVG CLUB</span>' : ''}
@@ -738,11 +756,13 @@ function renderDivCTeams() {
     const clubCell = shared
       ? `<td><span style="color:var(--accent);font-weight:600">${t.club}</span> <span style="font-size:.62rem;background:rgba(184,122,16,.15);color:var(--accent);padding:1px 6px;border-radius:3px;letter-spacing:.5px">${count} TEAMS</span></td>`
       : `<td style="color:var(--muted);font-size:.82rem">${t.club}</td>`;
+    const capPlayer = DIV_C_PLAYERS.find(p => p.team === t.short && p.role === 'Captain');
+    const capPhoto = capPlayer && capPlayer.photo ? `<img src="${_esc(capPlayer.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr>
       <td class="rank-cell">${i+1}</td>
       <td><strong>${t.full}</strong></td>
       <td><span class="team-badge">${t.short}</span></td>
-      <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span>${t.mobile ? '<br><a href="tel:'+_esc(t.mobile)+'" style="font-size:.7rem;color:var(--muted);font-family:\'DM Mono\',monospace">📞 '+_esc(t.mobile)+'</a>' : ''}</td>
+      <td>${capPhoto}${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span>${t.mobile ? '<br><a href="tel:'+_esc(t.mobile)+'" style="font-size:.7rem;color:var(--muted);font-family:\'DM Mono\',monospace">📞 '+_esc(t.mobile)+'</a>' : ''}</td>
       ${clubCell}
       <td><span style="font-size:.72rem;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:.5px;background:${t.surface==='Clay'?'rgba(180,100,30,.12)':t.surface==='Hard'?'rgba(37,99,235,.1)':'transparent'};color:${t.surface==='Clay'?'#a05a1a':t.surface==='Hard'?'var(--accent2)':'var(--muted)'}">${t.surface||'—'}</span></td>
       <td>${t.players}</td>
@@ -795,8 +815,9 @@ function renderDivCPlayers() {
     const partnerCell = pList
       ? pList.map(([n,c]) => `${n}<span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);margin-left:2px">(${c})</span>`).join(' · ')
       : '<span style="color:var(--muted)">—</span>';
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr>
-      <td>${p.name}${ageTag}${capTag}</td>
+      <td>${photoHtml}${p.name}${ageTag}${capTag}</td>
       <td><span class="team-badge">${p.team}</span></td>
       <td class="${p.gender==='M'?'gender-m':'gender-f'}">${p.gender==='M'?'♂':'♀'}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:600;color:${hasData?'var(--text)':'var(--muted)'}">${hasData ? p.gamesPlayed : '—'}</td>
@@ -2032,6 +2053,241 @@ function adminRunIntegrityCheck() {
   el.innerHTML = overall + html;
 }
 
+// ─── DATA LOADER (fetch match results from league.cdta.co.in) ────────────────
+
+// CDTA League team IDs per division
+const _CDTA_TEAM_IDS = {
+  I: [
+    { short:'SATCH', id:'b939c829abcdd8283aa223a6f1823b3c' },
+    { short:'TTOTS', id:'9740149a6bcf97dc3c995080ce87f788' },
+    { short:'STARS', id:'54b2d9d491211bfbf9c705ab67b907cc' },
+    { short:'RAIL',  id:'a3a1204c127e5f5262fdbfd3d315c611' },
+    { short:'CBE',   id:'89f21f256f5c812999e4ee30878eaf96' },
+    { short:'TGLO',  id:'ed541d3da4e0e3fafcb3cad96cfe2f89' },
+    { short:'SNS',   id:'5390d0469ab5f426e2c32779405cf122' },
+    { short:'GNEST', id:'5114925055e3948a0470b1cb2fb1826f' },
+    { short:'CHAMPS',id:'86eeb6da26a10196ca6e3fb691f3e29d' },
+    { short:'SAI',   id:'3e696590779a6a39377ef5e65c122cc9' },
+    { short:'KING',  id:'23a7149d66dc5bf9cec5f3b017613775' }
+  ],
+  C: [
+    { short:'SVG-C', id:'33b8e58885fd67abf9451ac10d0005e1' },
+    { short:'PSG-C', id:'97d1f0afce4c2f26d44c923ef67cfd6d' },
+    { short:'TIR-C', id:'34c04ad1a85a4cf0b34c9b267729d8f4' },
+    { short:'SNS-A', id:'9e392082f1f086fe6efa136892e97086' },
+    { short:'FMP-C', id:'82f3104ca78df1082c94248851947549' },
+    { short:'ANU-C', id:'a91c0fe2260ed362623b92290b1ce93e' },
+    { short:'PRO-C', id:'db927fda74a8ac0f1434bc54ef8da4c5' },
+    { short:'CMT-C', id:'68efafef859de99ea7becd75212c4250' },
+    { short:'GPT-C', id:'401f7b5e2d8e30c3b1ce5c2b4d8f072d' },
+    { short:'COS-C', id:'c4e513624bee7d012ab3187c7df66d40' },
+    { short:'LIF-C', id:'5260d0dbfa620a665ed15da93a4e0529' }
+  ],
+  F: [
+    { short:'ACES',  id:'98e23a2aa10ee36c4cd741d12cf97bd5' },
+    { short:'SNS',   id:'da7f621519eb04976c86bfb553353e37' },
+    { short:'CCTA',  id:'0af4b28bc7cb0ba153135a6b2d981bbd' },
+    { short:'GNEST', id:'c0ce71ef32e553b2cf88dc6cd33cb390' },
+    { short:'ALPHA', id:'3629d6678ba4c63f419c348ed481085a' },
+    { short:'MAP',   id:'297506f76b7ea4cdf0975a33d9bc5926' },
+    { short:'CASA',  id:'cd0552f46d807ccc6f1bc17004d6873d' },
+    { short:'CSA',   id:'7f344ab9a210cc01f425b484b60a1b08' },
+    { short:'TIR',   id:'a779d166d851494037c7e4db1ba6970d' },
+    { short:'CMTA',  id:'550d9600bb2c2204eef74eedc79450ed' },
+    { short:'ALV',   id:'83cce04cae48afad17925c58fa907384' }
+  ],
+  H: [
+    { short:'SNS-D', id:'57768d98d2ec3fc4dad98c36f246b731' },
+    { short:'PSGT',  id:'49cf69926a61cd4862a2d37396212578' },
+    { short:'ANU-B', id:'03206164b7f2b091d2be10fb6d3964f0' },
+    { short:'GPTC-C',id:'2a73a8c64654032c580fe8cb9acdfa02' },
+    { short:'RSP',   id:'8c24fdebf4a9e1eaa2a2a930999a1a8a' },
+    { short:'ACTC-B',id:'5a9c5a6824fda0317dc64ecb2a907aef' },
+    { short:'ANNUR', id:'2663430e96d4fb8f92e0077b03e7290d' },
+    { short:'TIR-B', id:'8f6e8bb04665621b822c380c9b364960' },
+    { short:'FALCON',id:'b6ec3911d413cbddc560471016a46b0f' },
+    { short:'KGR-D', id:'0a7606296d89fe8bcf32b270dc1489d5' },
+    { short:'CSA',   id:'c4ee4fbda1c3085dd2a1d3cc023b7076' }
+  ]
+};
+
+// Week date ranges (for matching)
+const _WEEK_DATES = {
+  8:  '14-Mar-2026',  9: '21-Mar-2026', 10: '28-Mar-2026', 11: '04-Apr-2026'
+};
+
+let _dlAbort = false;
+
+function _dlLog(msg, type) {
+  const log = document.getElementById('dl-log');
+  if (!log) return;
+  log.style.display = 'block';
+  const line = document.createElement('div');
+  line.style.color = type === 'ok' ? 'var(--green)' : type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--accent)' : 'var(--muted)';
+  if (type === 'heading') { line.style.color = 'var(--accent2)'; line.style.fontWeight = '700'; }
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function _parseTeamPage(html, weekDate) {
+  // weekDate like '28-Mar-2026'
+  const results = [];
+
+  // 1. Find match headers with date+teams+score from the HTML structure:
+  //    <div class="date">28-Mar-2026 | 29-Mar-2026</div> ... <a>TEAM_A</a> ... <div class="left">2</div><div class="right">1</div> ... <a>TEAM_B</a>
+  const matchRe = /<div class="date">\s*([\s\S]*?)<\/div>[\s\S]*?Team-Details\.php\?id=[a-f0-9]+">([\s\S]*?)<\/a>[\s\S]*?<div class="left">(\d+)<\/div>\s*<div class="right">(\d+)<\/div>[\s\S]*?Team-Details\.php\?id=[a-f0-9]+">([\s\S]*?)<\/a>/g;
+  let mh;
+  while ((mh = matchRe.exec(html)) !== null) {
+    const dateStr = mh[1].replace(/\s+/g, ' ').trim();
+    if (!dateStr.includes(weekDate)) continue;
+    results.push({
+      home: mh[2].trim(), homeScore: parseInt(mh[3]),
+      awayScore: parseInt(mh[4]), away: mh[5].trim(),
+      courts: []
+    });
+  }
+
+  // 2. Find court results: <div class='print Result 28-Mar-2026'><h5>PLAYER/PLAYER bt/lost PLAYER/PLAYER 6-2, 6-4</h5></div>
+  const courtRe = new RegExp("<div class=['\"]print Result " + weekDate.replace(/-/g, '\\-') + "['\"]>\\s*<h5>\\s*([\\s\\S]*?)\\s*<\\/h5>", 'g');
+  let cc;
+  const courts = [];
+  while ((cc = courtRe.exec(html)) !== null) {
+    const line = cc[1].replace(/\s+/g, ' ').trim();
+    const pm = line.match(/^(.+?)\s+(bt|lost)\s+(.+?)\s+(\d.+)$/);
+    if (pm) courts.push({ pair1: pm[1].trim(), won: pm[2] === 'bt', pair2: pm[3].trim(), sets: pm[4].trim() });
+  }
+
+  // 3. Assign courts to matches (3 per match in order)
+  let ci = 0;
+  results.forEach(m => { for (let i = 0; i < 3 && ci < courts.length; i++, ci++) m.courts.push(courts[ci]); });
+  return results;
+}
+
+function _REMOVED_parseMatchesFromHtml(html, weekDate) { /* removed */ }
+function _REMOVED2(html, weekDate) {
+  const matches = [];
+  // Find completed matches section — look for date patterns near match data
+  // Match pattern: "TEAM_A bt TEAM_B 3 - 0" or similar with court details
+  // The HTML has match blocks with dates, teams, scores, and court-level player/set data
+
+  // Extract all match blocks: look for date headers followed by match details
+  const datePattern = new RegExp('(' + weekDate.replace(/-/g, '[^<]*?') + '[^<]*?)<', 'i');
+
+  // Simpler: find all doubles results with player names and set scores
+  // Pattern: "PLAYER1/PLAYER2 defeated PLAYER3/PLAYER4 SET_SCORES"
+  // or: player pairs with scores like "6-2, 6-3"
+
+  // Extract match result blocks
+  const blockPattern = /(?:(\w[^<]*?)\s+bt\s+(\w[^<]*?)\s+(\d)\s*-\s*(\d))/gi;
+  let m;
+  while ((m = blockPattern.exec(html)) !== null) {
+    matches.push({
+      winner: m[1].trim(),
+      loser: m[2].trim(),
+      winScore: parseInt(m[3]),
+      loseScore: parseInt(m[4])
+    });
+  }
+
+  // Extract court-level details: "PLAYER1/PLAYER2" defeated/lost to "PLAYER3/PLAYER4" "6-2, 6-3"
+  const courtPattern = /([A-Z][^<]*?\/[A-Z][^<]*?)\s+(?:defeated|lost to)\s+([A-Z][^<]*?\/[A-Z][^<]*?)\s+.*?(\d-\d[^<]*?)(?:<|$)/gi;
+  const courts = [];
+  while ((m = courtPattern.exec(html)) !== null) {
+    courts.push({
+      pair1: m[1].trim(),
+      pair2: m[2].trim(),
+      sets: m[3].trim()
+    });
+  }
+
+  return { matches, courts, raw: html.length };
+}
+
+async function adminLoadMatchData() {
+  const week = parseInt(document.getElementById('dl-week').value);
+  const div = document.getElementById('dl-division').value;
+  const log = document.getElementById('dl-log');
+  const prog = document.getElementById('dl-progress');
+  log.innerHTML = '';
+  log.style.display = 'block';
+  _dlAbort = false;
+
+  document.getElementById('dl-load-btn').style.display = 'none';
+  document.getElementById('dl-stop-btn').style.display = '';
+
+  const weekDate = _WEEK_DATES[week] || '';
+  const divisions = div === 'all' ? ['I','C','F','H'] : [div];
+
+  _dlLog('═══ Loading Week ' + week + ' data (' + weekDate + ') ═══', 'heading');
+
+  const allResults = {};
+
+  for (const d of divisions) {
+    if (_dlAbort) break;
+    const teams = _CDTA_TEAM_IDS[d];
+    if (!teams) { _dlLog('Unknown division: ' + d, 'error'); continue; }
+
+    _dlLog('');
+    _dlLog('── Division ' + d + ' (' + teams.length + ' teams) ──', 'heading');
+
+    const seenMatches = new Set();
+    allResults[d] = [];
+
+    for (const team of teams) {
+      if (_dlAbort) break;
+      prog.textContent = 'Fetching ' + team.short + ' (Div ' + d + ')...';
+
+      try {
+        const res = await fetch('api/fetch-results.php?teamId=' + team.id);
+        const data = await res.json();
+        if (!data.ok) { _dlLog('  ' + team.short + ': fetch failed - ' + data.error, 'error'); continue; }
+
+        const matches = _parseTeamPage(data.html, weekDate);
+
+        matches.forEach(m => {
+          const key = [m.home, m.away].sort().join('|');
+          if (seenMatches.has(key)) return;
+          seenMatches.add(key);
+
+          const score = m.homeScore + '-' + m.awayScore;
+          _dlLog('  ' + m.home + ' ' + score + ' ' + m.away, 'ok');
+
+          m.courts.forEach((c, i) => {
+            const tag = c.won ? '✓' : '✗';
+            _dlLog('    Ct' + (i+1) + ': ' + c.pair1 + ' ' + (c.won ? 'bt' : 'lost') + ' ' + c.pair2 + ' ' + c.sets + ' ' + tag, '');
+          });
+
+          allResults[d].push(m);
+        });
+
+        if (matches.length === 0) {
+          _dlLog('  ' + team.short + ': no Week ' + week + ' match', 'warn');
+        }
+      } catch (e) {
+        _dlLog('  ' + team.short + ': error - ' + e.message, 'error');
+      }
+
+      await new Promise(r => setTimeout(r, 400));
+    }
+
+    _dlLog('  Division ' + d + ': ' + allResults[d].length + ' matches found', 'heading');
+  }
+
+  _dlLog('');
+  _dlLog('═══ Done! Review results above. ═══', 'heading');
+  prog.textContent = 'Complete. Review log above.';
+  document.getElementById('dl-load-btn').style.display = '';
+  document.getElementById('dl-stop-btn').style.display = 'none';
+}
+
+function adminStopLoad() {
+  _dlAbort = true;
+  document.getElementById('dl-progress').textContent = 'Stopped.';
+  document.getElementById('dl-load-btn').style.display = '';
+  document.getElementById('dl-stop-btn').style.display = 'none';
+}
+
 function renderSeasonSummary() {
   const el = document.getElementById('season-summary');
   if (!el) return;
@@ -2408,10 +2664,11 @@ populateDivCPlayerFilter();
 function renderDivFStandings() {
   const tb = document.getElementById('tbody-divf-standings');
   if (!tb) return;
+  const total = DIV_F_STANDINGS.length;
   tb.innerHTML = DIV_F_STANDINGS.map(s => {
     const isAces = s.short === 'ACES';
-    return `<tr${isAces?' style="background:#fffbeb;border-left:3px solid var(--accent)"':''}>
-      <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank}</td>
+    return `<tr${_standingRowClass(s.rank, total)}>
+      <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
       <td><span class="team-badge">${s.short}</span> ${s.full}${isAces?' <span style="font-size:.62rem;color:var(--accent);background:rgba(184,122,16,.15);padding:2px 7px;border-radius:3px;margin-left:4px">SVG CLUB</span>':''}</td>
       <td class="pts-cell">${s.pts}</td>
       <td>${s.played}</td>
@@ -2456,11 +2713,13 @@ function renderDivFTeams() {
     const clubCell = shared
       ? `<td><span style="color:var(--accent);font-weight:600">${t.club}</span> <span style="font-size:.62rem;background:rgba(184,122,16,.15);color:var(--accent);padding:1px 6px;border-radius:3px;letter-spacing:.5px">${count} TEAMS</span></td>`
       : `<td style="color:var(--muted);font-size:.82rem">${t.club}</td>`;
+    const capPlayer = DIV_F_PLAYERS.find(p => p.team === t.short && p.role === 'Captain');
+    const capPhoto = capPlayer && capPlayer.photo ? `<img src="${_esc(capPlayer.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr>
       <td class="rank-cell">${i+1}</td>
       <td><strong>${t.full}</strong></td>
       <td><span class="team-badge">${t.short}</span></td>
-      <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span>${t.mobile ? '<br><a href="tel:'+_esc(t.mobile)+'" style="font-size:.7rem;color:var(--muted);font-family:\'DM Mono\',monospace">📞 '+_esc(t.mobile)+'</a>' : ''}</td>
+      <td>${capPhoto}${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span>${t.mobile ? '<br><a href="tel:'+_esc(t.mobile)+'" style="font-size:.7rem;color:var(--muted);font-family:\'DM Mono\',monospace">📞 '+_esc(t.mobile)+'</a>' : ''}</td>
       ${clubCell}
       <td><span style="font-size:.72rem;padding:2px 7px;border-radius:3px;font-weight:600;letter-spacing:.5px;background:${t.surface==='Clay'?'rgba(180,100,30,.12)':t.surface==='Hard'?'rgba(37,99,235,.1)':'transparent'};color:${t.surface==='Clay'?'#a05a1a':t.surface==='Hard'?'var(--accent2)':'var(--muted)'}">${t.surface||'—'}</span></td>
       <td>${t.players}</td>
@@ -2582,8 +2841,9 @@ function renderDivFPlayers() {
     const partnerCell = pList
       ? pList.map(([n,c]) => `${n}<span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);margin-left:2px">(${c})</span>`).join(' · ')
       : '<span style="color:var(--muted)">—</span>';
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr>
-      <td>${p.name}${ageTag}${capTag}</td>
+      <td>${photoHtml}${p.name}${ageTag}${capTag}</td>
       <td><span class="team-badge">${p.team}</span></td>
       <td class="${p.gender==='M'?'gender-m':'gender-f'}">${p.gender==='M'?'♂':'♀'}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:600;color:${hasData?'var(--text)':'var(--muted)'}">${hasData ? p.gamesPlayed : '—'}</td>
@@ -2677,8 +2937,9 @@ function switchToDivH(btn) {
 function renderDivHStandings() {
   const tb = document.getElementById('tbody-divh-standings');
   if (!tb) return;
-  tb.innerHTML = DIV_H_STANDINGS.map(s => `<tr>
-    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank}</td>
+  const total = DIV_H_STANDINGS.length;
+  tb.innerHTML = DIV_H_STANDINGS.map(s => `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
     <td><span class="team-badge">${s.short}</span> ${s.full}</td>
     <td class="pts-cell">${s.pts}</td>
     <td>${s.played}</td>
@@ -2715,12 +2976,17 @@ function renderDivHProjection() {
 function renderDivHTeams() {
   const tb = document.getElementById('tbody-divh-teams');
   if (!tb) return;
-  tb.innerHTML = [...DIV_H_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+  tb.innerHTML = [...DIV_H_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => {
+    const capPlayer = DIV_H_PLAYERS.find(p => p.team === t.short && p.role === 'Captain');
+    const capPhoto = capPlayer && capPlayer.photo ? `<img src="${_esc(capPlayer.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    return `<tr>
     <td class="rank-cell">${i+1}</td>
     <td><strong>${t.full}</strong></td>
     <td><span class="team-badge">${t.short}</span></td>
+    <td>${capPhoto}${t.captain || '—'} ${t.captain ? '<span class="pill pill-gold" style="margin-left:4px">C</span>' : ''}</td>
     <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 function renderDivHSchedule() {
@@ -2836,8 +3102,9 @@ function renderDivHPlayers() {
     const partnerCell = pList
       ? pList.map(([n,c]) => `${n}<span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);margin-left:2px">(${c})</span>`).join(' · ')
       : '<span style="color:var(--muted)">—</span>';
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr>
-      <td>${p.name}</td>
+      <td>${photoHtml}${p.name}</td>
       <td><span class="team-badge">${p.team}</span></td>
       <td style="font-family:'DM Mono',monospace;font-weight:600;color:${hasData?'var(--text)':'var(--muted)'}">${hasData ? p.gamesPlayed : '—'}</td>
       <td><span style="font-family:'DM Mono',monospace">${winsDisplay}</span></td>
