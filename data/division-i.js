@@ -15,31 +15,31 @@ const DIV_I_TEAMS = [
   { short:'KING', full:'Kingsberry Tennis', captain:'Pani Ramasami', mobile:'9043287321', players:10, club:'Kingsberry Tennis', surface:'Synthetic', division:'I' }
 ];
 const DIV_I_STANDINGS = [
-  { rank:1,  short:'SATCH',  full:'SATCHIDANANDA',   pts:24, played:8, w:8, l:0, setsW:48, setsL:3,  gamesW:286, gamesL:89  },
-  { rank:2,  short:'TTOTS',  full:'TenniMaSh Tots',  pts:23, played:8, w:8, l:0, setsW:46, setsL:4,  gamesW:267, gamesL:84  },
+  { rank:1,  short:'SATCH',  full:'SATCHIDANANDA',   pts:27, played:9, w:9, l:0, setsW:54, setsL:3,  gamesW:322, gamesL:95  },
+  { rank:2,  short:'TTOTS',  full:'TenniMaSh Tots',  pts:26, played:9, w:9, l:0, setsW:52, setsL:4,  gamesW:303, gamesL:88  },
   { rank:3,  short:'STARS',  full:'SREEVATSA STARS', pts:20, played:9, w:7, l:2, setsW:41, setsL:17, gamesW:261, gamesL:150 },
-  { rank:4,  short:'RAIL',   full:'S RAILWAY - B',   pts:14, played:8, w:5, l:3, setsW:30, setsL:23, gamesW:196, gamesL:168 },
-  { rank:5,  short:'CBE',    full:'CBE CLUB - C',    pts:13, played:8, w:5, l:3, setsW:28, setsL:24, gamesW:233, gamesL:193 },
-  { rank:6,  short:'TGLO',   full:'TENNIGLO - D',    pts:12, played:8, w:5, l:3, setsW:23, setsL:23, gamesW:189, gamesL:170 },
+  { rank:4,  short:'RAIL',   full:'S RAILWAY - B',   pts:17, played:9, w:6, l:3, setsW:36, setsL:23, gamesW:232, gamesL:183 },
+  { rank:5,  short:'CBE',    full:'CBE CLUB - C',    pts:13, played:9, w:5, l:4, setsW:28, setsL:30, gamesW:239, gamesL:229 },
+  { rank:6,  short:'TGLO',   full:'TENNIGLO - D',    pts:12, played:9, w:5, l:4, setsW:23, setsL:29, gamesW:204, gamesL:206 },
   { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)',pts:9,  played:9, w:3, l:6, setsW:21, setsL:37, gamesW:208, gamesL:288 },
-  { rank:8,  short:'GNEST',  full:'GREEN NEST - B',  pts:8,  played:9, w:2, l:7, setsW:19, setsL:32, gamesW:154, gamesL:219 },
+  { rank:8,  short:'GNEST',  full:'GREEN NEST - B',  pts:8,  played:10,w:2, l:8, setsW:19, setsL:38, gamesW:158, gamesL:255 },
   { rank:9,  short:'CHAMPS', full:'SVG Champs',      pts:8,  played:9, w:2, l:7, setsW:18, setsL:39, gamesW:162, gamesL:264 },
-  { rank:10, short:'SAI',    full:'SAI TENNIS - B',  pts:4,  played:8, w:1, l:7, setsW:9,  setsL:43, gamesW:89,  gamesL:260 },
-  { rank:11, short:'KING',   full:'Kingsberry Tennis',pts:3, played:8, w:0, l:8, setsW:6,  setsL:42, gamesW:95,  gamesL:254 }
+  { rank:10, short:'SAI',    full:'SAI TENNIS - B',  pts:6,  played:9, w:2, l:7, setsW:13, setsL:45, gamesW:116, gamesL:281 },
+  { rank:11, short:'KING',   full:'Kingsberry Tennis',pts:4, played:9, w:0, l:9, setsW:8,  setsL:46, gamesW:116, gamesL:281 }
 ];
 
 const DIV_I_PROJECTIONS = [
-  { rank:1,  short:'SATCH',  full:'SATCHIDANANDA',    current:24, expected:4.3,  projected:28.3, min:24,   max:30 },
-  { rank:2,  short:'TTOTS',  full:'TenniMaSh Tots',   current:23, expected:4.3,  projected:27.3, min:23,   max:29 },
+  { rank:1,  short:'SATCH',  full:'SATCHIDANANDA',    current:27, expected:1.5,  projected:28.5, min:27,   max:30 },
+  { rank:2,  short:'TTOTS',  full:'TenniMaSh Tots',   current:26, expected:1.5,  projected:27.5, min:26,   max:29 },
   { rank:3,  short:'STARS',  full:'SREEVATSA STARS',  current:20, expected:2.0,  projected:22.0, min:20,   max:23 },
-  { rank:4,  short:'RAIL',   full:'S RAILWAY - B',    current:14, expected:3.5,  projected:17.5, min:14,   max:20 },
-  { rank:5,  short:'CBE',    full:'CBE CLUB - C',     current:13, expected:2.0,  projected:15.0, min:13,   max:19 },
-  { rank:6,  short:'TGLO',   full:'TENNIGLO - D',     current:12, expected:2.0,  projected:14.0, min:12,   max:18 },
-  { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)', current:9,  expected:2.0,  projected:11.0, min:9,    max:12 },
-  { rank:8,  short:'CHAMPS', full:'SVG Champs',       current:8,  expected:2.0,  projected:10.0, min:8,    max:11 },
-  { rank:9,  short:'GNEST',  full:'GREEN NEST - B',   current:8,  expected:0.5,  projected:8.5,  min:8,    max:9  },
-  { rank:10, short:'SAI',    full:'SAI TENNIS - B',   current:4,  expected:2.5,  projected:6.5,  min:4,    max:10 },
-  { rank:11, short:'KING',   full:'Kingsberry Tennis',current:3,  expected:2.0,  projected:5.0,  min:3,    max:9  }
+  { rank:4,  short:'RAIL',   full:'S RAILWAY - B',    current:17, expected:1.5,  projected:18.5, min:17,   max:20 },
+  { rank:5,  short:'CBE',    full:'CBE CLUB - C',     current:13, expected:1.5,  projected:14.5, min:13,   max:16 },
+  { rank:6,  short:'TGLO',   full:'TENNIGLO - D',     current:12, expected:1.0,  projected:13.0, min:12,   max:15 },
+  { rank:7,  short:'SNS',    full:'SNS-C(AS TENNIS)', current:9,  expected:2.5,  projected:11.5, min:9,    max:12 },
+  { rank:8,  short:'GNEST',  full:'GREEN NEST - B',   current:8,  expected:0.0,  projected:8.0,  min:8,    max:8  },
+  { rank:9,  short:'CHAMPS', full:'SVG Champs',       current:8,  expected:2.0,  projected:10.0, min:8,    max:11 },
+  { rank:10, short:'SAI',    full:'SAI TENNIS - B',   current:6,  expected:0.5,  projected:6.5,  min:6,    max:9  },
+  { rank:11, short:'KING',   full:'Kingsberry Tennis',current:4,  expected:1.0,  projected:5.0,  min:4,    max:7  }
 ];
 
 const DIV_I_KEY_PAIRS = [
@@ -452,11 +452,31 @@ const DIV_I_SCHEDULE = [
         { ct:3, home:'Giulia Bosco / Joseph J Chakola', away:'W/O (GREEN NEST - B)', sets:'W/O', win:'home', wo:true }
       ]},
   ]},
-  { week:10, date:'28-29 Mar 2026', done:false, matches:[
-    { home:'SATCHIDANANDA', score:null, away:'CBE CLUB - C', venue:'Satchidananda School', courts:[] },
-    { home:'GREEN NEST - B', score:null, away:'TenniMaSh Tots', venue:'Green Nest Sports Academy', courts:[] },
-    { home:'S RAILWAY - B', score:null, away:'TENNIGLO - D', venue:'S Railway', courts:[] },
-    { home:'SAI TENNIS - B', score:null, away:'Kingsberry Tennis', venue:'Sai Tennis Academy', courts:[] },
+  { week:10, date:'28-29 Mar 2026', done:true, matches:[
+    { home:'SATCHIDANANDA', score:'3-0', away:'CBE CLUB - C', venue:'Satchidananda School',
+      courts:[
+        { ct:1, home:'G.PRASATH / B.R.VISWAK', away:'SANGEET BAGARIA / JOSEPH J CHAKOLA', sets:'6-0, 6-2', win:'home' },
+        { ct:2, home:'T.KARTHICK / S K NITHIN', away:'RAGHURAM MURUGESAN / GAURAV KAPOOR', sets:'6-0, 6-2', win:'home' },
+        { ct:3, home:'G SENDHUR / THENEESHWARAN.M', away:'SARA VIVEK KHONA / GIULIA BOSCO', sets:'6-0, 6-2', win:'home' }
+      ]},
+    { home:'GREEN NEST - B', score:'0-3', away:'TenniMaSh Tots', venue:'Green Nest Sports Academy',
+      courts:[
+        { ct:1, home:'Sujith G / Vijayaraju G', away:'Varun Satishkumar / Sarankumar Sathasivam', sets:'0-6, 1-6', win:'away' },
+        { ct:2, home:'Gopala Krishnan / Murali Kumar D', away:'Mahita Karthik / Adith Balasubramaniam', sets:'1-6, 0-6', win:'away' },
+        { ct:3, home:'Gunaseel / Vigneswar', away:'Shivani Sivakumar / Juanishbibian C', sets:'2-6, 0-6', win:'away' }
+      ]},
+    { home:'S RAILWAY - B', score:'3-0', away:'TENNIGLO - D', venue:'S Railway',
+      courts:[
+        { ct:1, home:'Sampath Gnanaraja / Saravanakumar', away:'Siddaarth Malay / Thirumalai Nambi', sets:'6-3, 6-4', win:'home' },
+        { ct:2, home:'Vivinraja / Sasikumar', away:'Shyama Kelath / Rajarathnam', sets:'6-2, 6-2', win:'home' },
+        { ct:3, home:'Louis Paal / Sugunan', away:'Naveen Kumar / Pradeep E S', sets:'6-3, 6-1', win:'home' }
+      ]},
+    { home:'SAI TENNIS - B', score:'2-1', away:'Kingsberry Tennis', venue:'Sai Tennis Academy',
+      courts:[
+        { ct:1, home:'Naveen / Kanishkka', away:'Damien Stany / Samyukta Y', sets:'7-6, 6-1', win:'home' },
+        { ct:2, home:'Harsith / Alwin Swaminathan', away:'Sandra Christine / Angel Christina (Tina)', sets:'6-1, 6-1', win:'home' },
+        { ct:3, home:'Kevin / Dinesh', away:'Pani Ramasami / David Simon', sets:'1-6, 1-6', win:'away' }
+      ]},
     { home:'SNS-C(AS TENNIS)', score:'0-3', away:'SREEVATSA STARS', venue:'SNS Tennis Academy',
       courts:[
         { ct:1, home:'Harsha M K / Jaswanth M K', away:'Senthil / Suryaa', sets:'1-6, 5-7', win:'away' },
@@ -569,52 +589,52 @@ const DIV_I_PARTNERS = {
 };
 
 const DIV_I_TEAM_INFO = {
-  SATCH:  { wosGiven:0, weeksPlayed:8 },
-  TTOTS:  { wosGiven:0, weeksPlayed:8 },
-  STARS:  { wosGiven:0, weeksPlayed:8 },
-  TGLO:   { wosGiven:0, weeksPlayed:8 },
-  RAIL:   { wosGiven:0, weeksPlayed:8 },
-  GNEST:  { wosGiven:5, weeksPlayed:9 },
-  CBE:    { wosGiven:0, weeksPlayed:8 },
+  SATCH:  { wosGiven:0, weeksPlayed:9 },
+  TTOTS:  { wosGiven:0, weeksPlayed:9 },
+  STARS:  { wosGiven:0, weeksPlayed:9 },
+  TGLO:   { wosGiven:0, weeksPlayed:9 },
+  RAIL:   { wosGiven:0, weeksPlayed:9 },
+  GNEST:  { wosGiven:5, weeksPlayed:10 },
+  CBE:    { wosGiven:0, weeksPlayed:9 },
   CHAMPS: { wosGiven:1, weeksPlayed:9 },
-  SNS:    { wosGiven:0, weeksPlayed:8 },
-  SAI:    { wosGiven:0, weeksPlayed:8 },
-  KING:   { wosGiven:4, weeksPlayed:8 },
+  SNS:    { wosGiven:0, weeksPlayed:9 },
+  SAI:    { wosGiven:0, weeksPlayed:9 },
+  KING:   { wosGiven:4, weeksPlayed:9 },
 };
 
 const DIV_I_PROJ_BREAKDOWN = [
   {
-    short:'SATCH', full:'SATCHIDANANDA', current:24,
+    short:'SATCH', full:'SATCHIDANANDA', current:27,
     fixtures:[
-      { wk:10, opp:'CBE CLUB - C',        oppShort:'CBE',   venue:'H', projPts:2.8, min:2, max:3,
-        note:'Home vs CBE (5W-3L, 13 pts). SATCH unbeaten at home — CBE unlikely to trouble. Min: CBE steal 1 court; Max: SATCH sweep 3-0.' },
+      { wk:10, opp:'CBE CLUB - C',        oppShort:'CBE',   venue:'H', projPts:3, min:3, max:3, actual:3,
+        note:'W 3-0. Dominant sweep — all courts 6-0, 6-2.' },
       { wk:11, opp:'TenniMaSh Tots',      oppShort:'TTOTS', venue:'A', projPts:1.5, min:0, max:3,
         note:'TITLE DECIDER. Away at TTOTS (8W-0L, 23 pts). Two unbeaten teams — TTOTS home edge makes this 50/50. Full range possible.' },
     ]
   },
   {
-    short:'TTOTS', full:'TenniMaSh Tots', current:23,
+    short:'TTOTS', full:'TenniMaSh Tots', current:26,
     fixtures:[
-      { wk:10, opp:'GREEN NEST - B',      oppShort:'GNEST', venue:'A', projPts:2.5, min:2, max:3,
-        note:'Away at GNEST (2W-7L, 8 pts). TTOTS heavily favoured. Min: GNEST steal 1 court; Max: TTOTS sweep.' },
+      { wk:10, opp:'GREEN NEST - B',      oppShort:'GNEST', venue:'A', projPts:3, min:3, max:3, actual:3,
+        note:'W 3-0. Comfortable away sweep — GNEST managed only 4 games total.' },
       { wk:11, opp:'SATCHIDANANDA',       oppShort:'SATCH', venue:'H', projPts:1.5, min:0, max:3,
         note:'TITLE DECIDER. Home vs SATCH (8W-0L, 24 pts). Two unbeaten teams — home court gives TTOTS a slight edge. Full range possible.' },
     ]
   },
   {
-    short:'STARS', full:'SREEVATSA STARS', current:17,
+    short:'STARS', full:'SREEVATSA STARS', current:20,
     fixtures:[
-      { wk:10, opp:'SNS-C(AS TENNIS)',    oppShort:'SNS',  venue:'A', projPts:2.0, min:1, max:3,
-        note:'Away at SNS (3W-5L, 9 pts). SNS improved with Wk9 win — competitive away fixture. Min: SNS steal 2 courts; Max: STARS sweep.' },
+      { wk:10, opp:'SNS-C(AS TENNIS)',    oppShort:'SNS',  venue:'A', projPts:3, min:3, max:3, actual:3,
+        note:'W 3-0. Clean sweep away at SNS.' },
       { wk:11, opp:'TENNIGLO - D',        oppShort:'TGLO', venue:'H', projPts:2.0, min:1, max:3,
         note:'Home vs TGLO (5W-3L, 12 pts). STARS have edge at home. Min: TGLO steal 2 courts; Max: STARS 3-0.' },
     ]
   },
   {
-    short:'RAIL', full:'S RAILWAY - B', current:14,
+    short:'RAIL', full:'S RAILWAY - B', current:17,
     fixtures:[
-      { wk:10, opp:'TENNIGLO - D',        oppShort:'TGLO', venue:'H', projPts:2.0, min:1, max:3,
-        note:'Home vs TGLO (5W-3L, 12 pts). Home advantage key — RAIL need a strong win to secure 4th. Min: TGLO steal 2 courts; Max: RAIL 3-0.' },
+      { wk:10, opp:'TENNIGLO - D',        oppShort:'TGLO', venue:'H', projPts:3, min:3, max:3, actual:3,
+        note:'W 3-0. Strong home sweep vs TGLO — secures 4th place.' },
       { wk:11, opp:'CBE CLUB - C',        oppShort:'CBE',  venue:'A', projPts:1.5, min:0, max:3,
         note:'Away at CBE (5W-3L, 13 pts). CBE on form after 3-0 Wk9 win — evenly matched away fixture.' },
     ]
@@ -622,8 +642,8 @@ const DIV_I_PROJ_BREAKDOWN = [
   {
     short:'CBE', full:'CBE CLUB - C', current:13,
     fixtures:[
-      { wk:10, opp:'SATCHIDANANDA',       oppShort:'SATCH', venue:'A', projPts:0.5, min:0, max:1,
-        note:'Away at SATCH (8W-0L, 24 pts). Near-certain loss. Min: 0; Max: CBE steal 1 court.' },
+      { wk:10, opp:'SATCHIDANANDA',       oppShort:'SATCH', venue:'A', projPts:0, min:0, max:0, actual:0,
+        note:'L 0-3. Whitewashed away at SATCH — all courts lost 0-6, 2-6.' },
       { wk:11, opp:'S RAILWAY - B',       oppShort:'RAIL',  venue:'H', projPts:1.5, min:0, max:3,
         note:'Home vs RAIL (5W-3L, 14 pts). RAIL stronger but CBE has home edge. Could go either way.' },
     ]
@@ -631,8 +651,8 @@ const DIV_I_PROJ_BREAKDOWN = [
   {
     short:'TGLO', full:'TENNIGLO - D', current:12,
     fixtures:[
-      { wk:10, opp:'S RAILWAY - B',       oppShort:'RAIL', venue:'A', projPts:1.0, min:0, max:3,
-        note:'Away at RAIL (5W-3L, 14 pts). RAIL at home are strong — TGLO need to bounce back. Min: RAIL sweep; Max: TGLO upset.' },
+      { wk:10, opp:'S RAILWAY - B',       oppShort:'RAIL', venue:'A', projPts:0, min:0, max:0, actual:0,
+        note:'L 0-3. Swept away at RAIL.' },
       { wk:11, opp:'SREEVATSA STARS',     oppShort:'STARS',venue:'A', projPts:1.0, min:0, max:3,
         note:'Away at STARS (6W-2L, 17 pts). Tough finish — STARS at home are formidable.' },
     ]
@@ -640,8 +660,8 @@ const DIV_I_PROJ_BREAKDOWN = [
   {
     short:'SNS', full:'SNS-C(AS TENNIS)', current:9,
     fixtures:[
-      { wk:10, opp:'SREEVATSA STARS',     oppShort:'STARS', venue:'H', projPts:1.0, min:0, max:2,
-        note:'Home vs STARS (6W-2L, 17 pts). STARS much stronger — SNS need home court magic. Min: STARS sweep; Max: SNS steal 2 courts.' },
+      { wk:10, opp:'SREEVATSA STARS',     oppShort:'STARS', venue:'H', projPts:0, min:0, max:0, actual:0,
+        note:'L 0-3. Swept at home by STARS.' },
       { wk:11, opp:'SAI TENNIS - B',      oppShort:'SAI',   venue:'A', projPts:2.5, min:1, max:3,
         note:'Away at SAI (1W-7L, 4 pts). SAI very weak — SNS strong favourite. Min: SAI steal 1 court; Max: SNS sweep.' },
     ]
@@ -658,26 +678,26 @@ const DIV_I_PROJ_BREAKDOWN = [
   {
     short:'GNEST', full:'GREEN NEST - B', current:8,
     fixtures:[
-      { wk:10, opp:'TenniMaSh Tots',      oppShort:'TTOTS', venue:'H', projPts:0.5, min:0, max:1,
-        note:'Home vs TTOTS (8W-0L, 23 pts). TTOTS unbeaten — near-certain loss. Max: GNEST steal 1 court.' },
+      { wk:10, opp:'TenniMaSh Tots',      oppShort:'TTOTS', venue:'H', projPts:0, min:0, max:0, actual:0,
+        note:'L 0-3. Swept at home by TTOTS — season complete.' },
       { wk:11, opp:'REST WEEK',            oppShort:'—',      venue:'—', projPts:0.0, min:0, max:0,
         note:'Rest week — no match played.' },
     ]
   },
   {
-    short:'SAI', full:'SAI TENNIS - B', current:4,
+    short:'SAI', full:'SAI TENNIS - B', current:6,
     fixtures:[
-      { wk:10, opp:'Kingsberry Tennis',   oppShort:'KING',  venue:'H', projPts:2.0, min:1, max:3,
-        note:'Home vs KING (0W-8L). Bottom-two clash — SAI home advantage gives the edge. Min: KING steal 2 courts; Max: SAI sweep.' },
+      { wk:10, opp:'Kingsberry Tennis',   oppShort:'KING',  venue:'H', projPts:2, min:2, max:2, actual:2,
+        note:'W 2-1. Won courts 1 & 2 at home; KING took court 3.' },
       { wk:11, opp:'SNS-C(AS TENNIS)',    oppShort:'SNS',   venue:'H', projPts:0.5, min:0, max:3,
         note:'Home vs SNS (3W-5L, 9 pts). SNS improving — tough final match for SAI.' },
     ]
   },
   {
-    short:'KING', full:'Kingsberry Tennis', current:3,
+    short:'KING', full:'Kingsberry Tennis', current:4,
     fixtures:[
-      { wk:10, opp:'SAI TENNIS - B',      oppShort:'SAI',   venue:'A', projPts:1.0, min:0, max:3,
-        note:'Away at SAI (1W-7L). Bottom-two clash — KING\'s best remaining chance for a first win. Full range possible.' },
+      { wk:10, opp:'SAI TENNIS - B',      oppShort:'SAI',   venue:'A', projPts:1, min:1, max:1, actual:1,
+        note:'L 1-2. Won court 3 but lost courts 1 & 2 away at SAI.' },
       { wk:11, opp:'SVG Champs',          oppShort:'CHAMPS',venue:'H', projPts:1.0, min:0, max:3,
         note:'Home vs CHAMPS (2W-7L). Home court could help — KING need a final push. Min: CHAMPS sweep; Max: KING upset 3-0.' },
     ]

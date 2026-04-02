@@ -117,12 +117,12 @@ const DIV_C_PLAYERS = [
   { name:'Sathish Prabhu Dr',     team:'LIF-C', gender:'M', age:null, role:'Player',  gamesPlayed:1, wins:0, photo:'photos/div-c/lif-c/sathish-prabhu-dr.jpg' }
 ];
 const DIV_C_STANDINGS = [
-  { rank:1,  short:'SNS-A',  full:'SNS TENNIS ACADEMY A', pts:19, played:9, setsW:40, setsL:20, gamesW:288, gamesL:209 },
-  { rank:2,  short:'FMP-C',  full:'FMPTA - A',            pts:18, played:8, setsW:38, setsL:18, gamesW:242, gamesL:189 },
-  { rank:3,  short:'PSG-C',  full:'PSG - A',              pts:17, played:8, setsW:36, setsL:16, gamesW:248, gamesL:143 },
-  { rank:4,  short:'TIR-C',  full:'TIRUPUR - A',          pts:15, played:8, setsW:34, setsL:20, gamesW:249, gamesL:170 },
-  { rank:5,  short:'ANU-C',  full:'ANUSHAM - A',          pts:13, played:8, setsW:30, setsL:26, gamesW:223, gamesL:217 },
-  { rank:6,  short:'PRO-C',  full:'PROSCHOOL - B',        pts:13, played:8, setsW:27, setsL:25, gamesW:205, gamesL:206 },
+  { rank:1,  short:'PSG-C',  full:'PSG - A',              pts:20, played:9, setsW:42, setsL:16, gamesW:285, gamesL:152 },
+  { rank:2,  short:'FMP-C',  full:'FMPTA - A',            pts:20, played:9, setsW:42, setsL:20, gamesW:270, gamesL:211 },
+  { rank:3,  short:'SNS-A',  full:'SNS TENNIS ACADEMY A', pts:20, played:10, setsW:43, setsL:24, gamesW:328, gamesL:248 },
+  { rank:4,  short:'TIR-C',  full:'TIRUPUR - A',          pts:17, played:9, setsW:38, setsL:23, gamesW:288, gamesL:210 },
+  { rank:5,  short:'PRO-C',  full:'PROSCHOOL - B',        pts:14, played:9, setsW:29, setsL:29, gamesW:227, gamesL:234 },
+  { rank:6,  short:'ANU-C',  full:'ANUSHAM - A',          pts:13, played:9, setsW:30, setsL:32, gamesW:232, gamesL:254 },
   { rank:7,  short:'SVG-C',  full:'SREEVATSA BLUES',      pts:11, played:9, setsW:26, setsL:35, gamesW:218, gamesL:257 },
   { rank:8,  short:'CMT-C',  full:'CMTA - C',             pts:11, played:8, setsW:24, setsL:26, gamesW:210, gamesL:197 },
   { rank:9,  short:'COS-C',  full:'COSMO - B',            pts:8,  played:8, setsW:20, setsL:33, gamesW:199, gamesL:258 },
@@ -502,10 +502,22 @@ const DIV_C_SCHEDULE = [
   ]},
   { week:10, date:'28-29 Mar 2026', done:false, matches:[
     { home:'REST',                 score:null,  away:'SREEVATSA BLUES',      venue:'—', rest:true, courts:[] },
-    { home:'PSG - A',              score:null,  away:'ANUSHAM - A',          venue:'PSG', courts:[] },
+    { home:'PSG - A',              score:'3-0', away:'ANUSHAM - A',          venue:'PSG', courts:[
+      { ct:1, home:'AJAY / S R PRANAV',                    away:'GANESAN S / Madhan Kumar P',                sets:'6-1, 6-2',       win:'home' },
+      { ct:2, home:'Mano Nithilan S / R PRANAV',           away:'MOHAMMED ANSARUDEEN / VISWANATHAN',         sets:'6-0, 6-0',       win:'home' },
+      { ct:3, home:'AKASH S P / RAGESH M',                 away:'Viraj V / Keerthan Kumar B',                sets:'6-1, 7-5',       win:'home' },
+    ] },
     { home:'G.P.T.C - B',          score:null,  away:'LIFESPRING - A',       venue:'GPTC', courts:[] },
-    { home:'SNS TENNIS ACADEMY A', score:null,  away:'TIRUPUR - A',          venue:'SNS Tennis Academy', courts:[] },
-    { home:'PROSCHOOL - B',        score:null,  away:'FMPTA - A',            venue:'Proschool', courts:[] },
+    { home:'SNS TENNIS ACADEMY A', score:'1-2', away:'TIRUPUR - A',          venue:'SNS Tennis Academy', courts:[
+      { ct:1, home:'MAHESH BABU / Rameshbabu',             away:'L.VIJAYARAGHAVAN / UDHAYAKUMAR',            sets:'6-2, 6-3',       win:'home' },
+      { ct:2, home:'ANANDBABU / RAVI DEEPU',               away:'ARUN NATARAJ / REHAN KUMAR',                sets:'3-6, 4-6',       win:'away' },
+      { ct:3, home:'JAIWANTH SRIVATHSAVA / MUKESH ANAND',  away:'SABARISH KUMAR / SIVA PRASATH K',           sets:'6-3, 5-7, 10-12', win:'away' },
+    ] },
+    { home:'PROSCHOOL - B',        score:'1-2', away:'FMPTA - A',            venue:'Proschool', courts:[
+      { ct:1, home:'Vijay Prasad / Saravanan G',           away:'S.VIVEKANANDHAN / V.PRANITHA',              sets:'3-6, 4-6',       win:'away' },
+      { ct:2, home:'Riyas / Pavizhan V L',                 away:'PARAMASIVAM P S / SAGAYARAJ F',             sets:'6-1, 6-3',       win:'home' },
+      { ct:3, home:'Arun Karthik / Elango G',              away:'GOWTHAM.V / V.YASWANTH',                    sets:'2-6, 1-6',       win:'away' },
+    ] },
     { home:'COSMO - B',            score:null,  away:'CMTA - C',             venue:'Cosmo', courts:[] },
   ]},
   { week:11, date:'04-05 Apr 2026', done:false, matches:[

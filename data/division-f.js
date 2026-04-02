@@ -124,14 +124,14 @@ const DIV_F_TEAMS = [
 ];
 
 const DIV_F_STANDINGS = [
-  { rank:1,  short:'GNEST', full:'GREEN NEST - A',       pts:18, played:8, w:5, l:3, setsW:39, setsL:14, gamesW:265, gamesL:145 },
-  { rank:2,  short:'ALPHA', full:'ALPHA - B',             pts:17, played:8, w:6, l:2, setsW:36, setsL:15, gamesW:267, gamesL:168 },
-  { rank:3,  short:'ACES',  full:'SREEVATSA ACES',        pts:17, played:8, w:6, l:2, setsW:35, setsL:17, gamesW:253, gamesL:171 },
-  { rank:4,  short:'CCTA',  full:'CCTA - C',              pts:17, played:8, w:6, l:2, setsW:37, setsL:20, gamesW:256, gamesL:179 },
-  { rank:5,  short:'SNS',   full:'SNS TENNIS ACADEMY B',  pts:16, played:8, w:6, l:2, setsW:35, setsL:19, gamesW:247, gamesL:192 },
-  { rank:6,  short:'MAP',   full:'MAPLES - B',            pts:12, played:8, w:4, l:4, setsW:26, setsL:23, gamesW:205, gamesL:213 },
-  { rank:7,  short:'CSA',   full:'CS ACADEMY - B',        pts:12, played:9, w:4, l:5, setsW:24, setsL:32, gamesW:212, gamesL:271 },
-  { rank:8,  short:'CASA',  full:'CASA GRAND ETERNIA 2',  pts:11, played:8, w:3, l:5, setsW:21, setsL:29, gamesW:199, gamesL:228 },
+  { rank:1,  short:'GNEST', full:'GREEN NEST - A',       pts:20, played:9, w:6, l:3, setsW:43, setsL:16, gamesW:293, gamesL:161 },
+  { rank:2,  short:'ACES',  full:'SREEVATSA ACES',        pts:19, played:9, w:7, l:2, setsW:39, setsL:19, gamesW:280, gamesL:196 },
+  { rank:3,  short:'CCTA',  full:'CCTA - C',              pts:19, played:9, w:7, l:2, setsW:41, setsL:24, gamesW:299, gamesL:222 },
+  { rank:4,  short:'ALPHA', full:'ALPHA - B',             pts:18, played:9, w:6, l:3, setsW:40, setsL:19, gamesW:310, gamesL:211 },
+  { rank:5,  short:'SNS',   full:'SNS TENNIS ACADEMY B',  pts:17, played:9, w:6, l:3, setsW:37, setsL:23, gamesW:263, gamesL:220 },
+  { rank:6,  short:'MAP',   full:'MAPLES - B',            pts:15, played:9, w:5, l:4, setsW:32, setsL:26, gamesW:266, gamesL:262 },
+  { rank:7,  short:'CSA',   full:'CS ACADEMY - B',        pts:13, played:10, w:4, l:6, setsW:26, setsL:36, gamesW:237, gamesL:298 },
+  { rank:8,  short:'CASA',  full:'CASA GRAND ETERNIA 2',  pts:11, played:9, w:3, l:6, setsW:24, setsL:35, gamesW:248, gamesL:289 },
   { rank:9,  short:'TIR',   full:'TIRUPUR CITY CLUB',     pts:9,  played:9, w:2, l:7, setsW:21, setsL:37, gamesW:206, gamesL:272 },
   { rank:10, short:'ALV',   full:'ALV ACERS',             pts:4,  played:8, w:0, l:8, setsW:11, setsL:41, gamesW:160, gamesL:270 },
   { rank:11, short:'CMTA',  full:'CMTA - B',              pts:2,  played:8, w:0, l:8, setsW:7,  setsL:45, gamesW:132, gamesL:293 },
@@ -671,10 +671,30 @@ const DIV_F_SCHEDULE = [
       ]},
   ]},
   { week:10, date:'28–29 Mar 2026', done:false, matches:[
-    { home:'SNS TENNIS ACADEMY B', score:null, away:'GREEN NEST - A',      venue:'SNS Tennis Academy (Bullseye)', courts:[] },
-    { home:'SREEVATSA ACES',       score:null, away:'CS ACADEMY - B',      venue:'Sreevatsa Club',      courts:[] },
-    { home:'ALPHA - B',            score:null, away:'CCTA - C',            venue:'Alpha',               courts:[] },
-    { home:'MAPLES - B',           score:null, away:'CASA GRAND ETERNIA 2',venue:'Maples',              courts:[] },
+    { home:'SNS TENNIS ACADEMY B', score:'1-2', away:'GREEN NEST - A',      venue:'SNS Tennis Academy (Bullseye)',
+      courts:[
+        { ct:1, home:'Kishore Kumar V / Yashwanth Avinash K', away:'Thansiha / Chris Ajay Bastine', sets:'6-0, 6-4',        win:'home' },
+        { ct:2, home:'Harish Mahadevan / Celine Mariya B',    away:'Srikanth G / Gobinath V',       sets:'4-6, 0-6',        win:'away' },
+        { ct:3, home:'Mothilal SU / Maria Reayan',            away:'Bharathidashan / Sarura',       sets:'0-6, 0-6',        win:'away' },
+      ]},
+    { home:'SREEVATSA ACES',       score:'2-1', away:'CS ACADEMY - B',      venue:'Sreevatsa Club',
+      courts:[
+        { ct:1, home:'J.Suresh Kumar / Dr. Suresh',           away:'Shashesh / Mithil',             sets:'6-2, 6-4',        win:'home' },
+        { ct:2, home:'Dr. Sethupathy / Cruz',                 away:'Rakshan / Vikram',              sets:'3-6, 0-6',        win:'away' },
+        { ct:3, home:'Ramachandran R / Yash P Batheja',       away:'Aryan Bafna / Sivacharan',      sets:'6-4, 6-3',        win:'home' },
+      ]},
+    { home:'ALPHA - B',            score:'1-2', away:'CCTA - C',            venue:'Alpha',
+      courts:[
+        { ct:1, home:'Tharun / Mary Preethi J',               away:'Raju / Ezhiloviyan',            sets:'7-5, 2-6, 7-10',  win:'away' },
+        { ct:2, home:'Arun / Saadhana S',                     away:'Vishnu / Varun',                sets:'6-2, 3-6, 6-10',  win:'away' },
+        { ct:3, home:'Pradeep / Diya Iniyal R',               away:'Obuli / Subramani',             sets:'6-3, 6-1',        win:'home' },
+      ]},
+    { home:'MAPLES - B',           score:'3-0', away:'CASA GRAND ETERNIA 2',venue:'Maples',
+      courts:[
+        { ct:1, home:'M.Risi Kesauv / S Karan',               away:'Narendran Bhojan / Muthukumar M',       sets:'6-0, 3-6, 13-11', win:'home' },
+        { ct:2, home:'Yuwaraja Kaliyappan / Feroz N',          away:'Ganesan Venkateswaran / Karthikeyan K', sets:'4-6, 6-2, 12-10', win:'home' },
+        { ct:3, home:'G.Mithun / R Senthil',                  away:'Prashanth S / Velumani S',              sets:'1-6, 6-0, 10-8',  win:'home' },
+      ]},
     { home:'CMTA - B',             score:null, away:'ALV ACERS',           venue:'CMTA',                courts:[] },
   ]},
   { week:11, date:'04–05 Apr 2026', done:false, matches:[

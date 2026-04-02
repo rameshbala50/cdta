@@ -1,5 +1,5 @@
 ﻿// CDTA 2026 -- Division H Data
-// Auto-extracted from match records, Week 8
+// Auto-extracted from match records, Week 10
 
 const DIV_H_TEAMS = [
   { short:'SNS-D',  full:'SNS - D',              captain:'', mobile:'', players:0, club:'SNS Tennis Academy(Bullseye)',  surface:'', division:'H' },
@@ -16,14 +16,14 @@ const DIV_H_TEAMS = [
 ];
 
 const DIV_H_STANDINGS = [
-  { rank:1,  short:'SNS-D',  full:'SNS - D',              pts:20, played:8, w:8, l:0, setsW:41, setsL:14, gamesW:257, gamesL:182 },
-  { rank:2,  short:'PSG',    full:'PSG Tech',              pts:18, played:7, w:6, l:1, setsW:37, setsL:9,  gamesW:233, gamesL:130 },
-  { rank:3,  short:'ANU-B',  full:'ANUSHAM - B',           pts:16, played:8, w:6, l:2, setsW:35, setsL:17, gamesW:250, gamesL:150 },
-  { rank:4,  short:'RSP',    full:'RS PURAM - A',          pts:12, played:7, w:4, l:3, setsW:27, setsL:20, gamesW:198, gamesL:149 },
-  { rank:5,  short:'GPTC-C', full:'G.P.T.C - C',          pts:11, played:7, w:3, l:4, setsW:24, setsL:21, gamesW:187, gamesL:168 },
-  { rank:6,  short:'ANNUR',  full:'ANNUR - C(V2 SPORTS)',  pts:11, played:7, w:4, l:3, setsW:24, setsL:24, gamesW:164, gamesL:169 },
-  { rank:7,  short:'ACTC-B', full:'ACTC - B',              pts:10, played:7, w:3, l:4, setsW:21, setsL:24, gamesW:169, gamesL:190 },
-  { rank:8,  short:'TIR-B',  full:'TIRUPUR - B',           pts:8,  played:7, w:3, l:4, setsW:19, setsL:28, gamesW:163, gamesL:197 },
+  { rank:1,  short:'SNS-D',  full:'SNS - D',              pts:22, played:9, w:9, l:0, setsW:46, setsL:16, gamesW:302, gamesL:209 },
+  { rank:2,  short:'PSG',    full:'PSG Tech',              pts:21, played:8, w:7, l:1, setsW:43, setsL:9,  gamesW:270, gamesL:149 },
+  { rank:3,  short:'ANU-B',  full:'ANUSHAM - B',           pts:16, played:9, w:6, l:3, setsW:35, setsL:23, gamesW:269, gamesL:187 },
+  { rank:4,  short:'RSP',    full:'RS PURAM - A',          pts:13, played:8, w:4, l:4, setsW:29, setsL:24, gamesW:226, gamesL:178 },
+  { rank:5,  short:'GPTC-C', full:'G.P.T.C - C',          pts:13, played:8, w:4, l:4, setsW:28, setsL:23, gamesW:215, gamesL:192 },
+  { rank:6,  short:'ANNUR',  full:'ANNUR - C(V2 SPORTS)',  pts:12, played:8, w:4, l:4, setsW:26, setsL:28, gamesW:188, gamesL:197 },
+  { rank:7,  short:'ACTC-B', full:'ACTC - B',              pts:11, played:8, w:3, l:5, setsW:23, setsL:29, gamesW:196, gamesL:235 },
+  { rank:8,  short:'TIR-B',  full:'TIRUPUR - B',           pts:10, played:8, w:4, l:4, setsW:23, setsL:30, gamesW:192, gamesL:225 },
   { rank:9,  short:'KGR-D',  full:'KGR - D',               pts:6,  played:8, w:2, l:6, setsW:15, setsL:37, gamesW:143, gamesL:244 },
   { rank:10, short:'FALCON', full:'FALCON',                pts:5,  played:7, w:1, l:6, setsW:13, setsL:33, gamesW:153, gamesL:221 },
   { rank:11, short:'CSA',    full:'CS ACADEMY - C',        pts:3,  played:7, w:1, l:6, setsW:7,  setsL:36, gamesW:110, gamesL:227 }
@@ -555,12 +555,32 @@ const DIV_H_SCHEDULE = [
     { home:'SNS - D', score:'TBD', away:'ANNUR - C(V2 SPORTS)', venue:'SNS Tennis Academy(Bullseye)' },
     { home:'PSG Tech', score:'TBD', away:'CS ACADEMY - C', venue:'PSG Tech Tennis Club' }
   ]},
-  { week:10, date:'28-29 Mar 2026', done:false, matches:[
-    { home:'TIRUPUR - B', score:'TBD', away:'RS PURAM - A', venue:'Tirupur Club' },
-    { home:'ANNUR - C(V2 SPORTS)', score:'TBD', away:'G.P.T.C - C', venue:'Annur Club' },
-    { home:'SNS - D', score:'TBD', away:'ACTC - B', venue:'SNS Tennis Academy(Bullseye)' },
-    { home:'CS ACADEMY - C', score:'TBD', away:'FALCON', venue:'CS Academy' },
-    { home:'ANUSHAM - B', score:'TBD', away:'PSG Tech', venue:'Anusham Tennis Academy' }
+  { week:10, date:'28-29 Mar 2026', done:true, matches:[
+    { home:'TIRUPUR - B', score:'2-1', away:'RS PURAM - A', venue:'Tirupur Club',
+      courts:[
+        { ct:1, home:'LAKSHAMANAN S / THIYAGEARAJAN T', away:'Ramachandran Dr / Prakash. R', sets:'7-5, 6-4', win:'home' },
+        { ct:2, home:'HEMAVARSHINI S J / S.CHANDRU', away:'Venugopal C.V / Vishwaroop', sets:'6-4, 6-3', win:'home' },
+        { ct:3, home:'AYYASSUWAMY / R.KARTHIKAA', away:'Rajendran / Ravi.N', sets:'3-6, 1-6', win:'away' }
+      ]},
+    { home:'ANNUR - C(V2 SPORTS)', score:'1-2', away:'G.P.T.C - C', venue:'Annur Club',
+      courts:[
+        { ct:1, home:'Kiruthick / SELVAKUMAR', away:'VIKRAM DG / SAI SIMIRITHI', sets:'3-6, 5-7', win:'away' },
+        { ct:2, home:'Gnaalan / Samyuktha', away:'Prabhu Anand R / GOKUL THANGAM', sets:'0-6, 4-6', win:'away' },
+        { ct:3, home:'YOGESH KUMAR / RANSLEY ROGER', away:'SATHVIKA R P / YOKESH R', sets:'6-3, 6-0', win:'home' }
+      ]},
+    { home:'SNS - D', score:'2-1', away:'ACTC - B', venue:'SNS Tennis Academy(Bullseye)',
+      courts:[
+        { ct:1, home:'Jayachandran J / Pushparaj', away:'GOWRI SHANKAR / JEYAKUMAR R', sets:'6-0, 6-0', win:'home' },
+        { ct:2, home:'Penmetsha Sita Ram Rohit Verma / Senthilnathan CR', away:'KARTHICK SHANKAR / MITHRAN', sets:'6-1, 6-4', win:'home' },
+        { ct:3, home:'SATHISH KUMAR / Sathyaseelan', away:'Raul Gujjan R R / SRIDHAR M', sets:'5-7, 6-3, 10-12', win:'away' }
+      ]},
+    { home:'CS ACADEMY - C', score:null, away:'FALCON', venue:'CS Academy' },
+    { home:'ANUSHAM - B', score:'0-3', away:'PSG Tech', venue:'Anusham Tennis Academy',
+      courts:[
+        { ct:1, home:'Ganesh Pattiappan / Charan Ganesh', away:'Mehul Dinesh / BHUVANESH D', sets:'5-7, 4-6', win:'away' },
+        { ct:2, home:'RINESH AARYA / Nithinraj PG', away:'Adhitya R / Karin Senapati R', sets:'1-6, 3-6', win:'away' },
+        { ct:3, home:'Venkatesh R / Vignesh K', away:'Aatish Srinivasan / Abhishek K A', sets:'4-6, 2-6', win:'away' }
+      ]}
   ]},
   { week:11, date:'04-05 Apr 2026', done:false, matches:[
     { home:'FALCON', score:'TBD', away:'ANUSHAM - B', venue:'Falcon Tennis Academy' },
