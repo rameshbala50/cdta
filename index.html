@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Coimbatore District Tennis Association – CDTA 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=202604021821">
+<link rel="stylesheet" href="css/main.css?v=202604021838">
 </head>
 <body>
 
@@ -933,6 +933,7 @@
       <div style="font-weight:600;font-size:.85rem;margin-bottom:8px">Data Integrity Check</div>
       <div style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Verify player stats match court-level results across all divisions</div>
       <button onclick="adminRunIntegrityCheck()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">Run Check</button>
+      <button onclick="adminAutoFixStats()" style="padding:8px 20px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;margin-left:8px">Auto Fix Stats</button>
       <div id="integrity-result" style="margin-top:10px;font-size:.8rem"></div>
     </div>
 
@@ -1035,11 +1036,11 @@
 </div><!-- end page-admin -->
 
 <!-- Data files must load before app logic -->
-<script src="data/auth.js?v=202604021821"></script>
-<script src="data/division-i.js?v=202604021821"></script>
-<script src="data/division-c.js?v=202604021821"></script>
-<script src="data/division-f.js?v=202604021821"></script>
-<script src="data/division-h.js?v=202604021821"></script>
-<script src="js/app.js?v=202604021821"></script>
+<script src="data/auth.js?v=202604021838"></script>
+<script src="data/division-i.js?v=202604021838"></script>
+<script src="data/division-c.js?v=202604021838"></script>
+<script src="data/division-f.js?v=202604021838"></script>
+<script src="data/division-h.js?v=202604021838"></script>
+<script src="js/app.js?v=202604021838"></script>
 </body>
 </html>

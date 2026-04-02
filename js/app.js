@@ -1997,6 +1997,7 @@ function adminRunIntegrityCheck() {
 
   function checkDiv(label, players, schedule, partners) {
     let divIssues = 0;
+    const details = [];
     // Build stats from court data
     const stats = {};
     schedule.forEach(wk => {
@@ -2005,14 +2006,12 @@ function adminRunIntegrityCheck() {
         if (!m.courts) return;
         m.courts.forEach(ct => {
           [[ct.home, ct.win === 'home'], [ct.away, ct.win === 'away']].forEach(([pair, won]) => {
-            const names = pair.split(' / ').map(s => s.trim()).filter(s => s);
-            if (names.length === 2) {
-              names.forEach(n => {
-                if (!stats[n]) stats[n] = { gp: 0, w: 0 };
-                stats[n].gp++;
-                if (won) stats[n].w++;
-              });
-            }
+            const names = pair.split(' / ').map(s => s.trim()).filter(s => s && !s.startsWith('W/O'));
+            names.forEach(n => {
+              if (!stats[n]) stats[n] = { gp: 0, w: 0 };
+              stats[n].gp++;
+              if (won) stats[n].w++;
+            });
           });
         });
       });
@@ -2021,24 +2020,31 @@ function adminRunIntegrityCheck() {
     players.forEach(p => {
       if (p.gamesPlayed === null) return;
       const s = stats[p.name];
-      if (!s) { divIssues++; return; }
-      if (s.gp !== p.gamesPlayed) divIssues++;
-      if (s.w !== p.wins) divIssues++;
+      if (!s) { divIssues++; details.push(p.name + ' (' + p.team + '): in roster (GP=' + p.gamesPlayed + ') but NOT in court data — name mismatch?'); return; }
+      if (s.gp !== p.gamesPlayed) { divIssues++; details.push(p.name + ' (' + p.team + '): GP roster=' + p.gamesPlayed + ' court=' + s.gp); }
+      if (s.w !== p.wins) { divIssues++; details.push(p.name + ' (' + p.team + '): Wins roster=' + p.wins + ' court=' + s.w); }
     });
     // Check partner sums
     if (partners) {
       players.forEach(p => {
         if (p.gamesPlayed === null) return;
         const pList = partners[p.name];
-        if (!pList) { if (stats[p.name]) divIssues++; return; }
+        if (!pList) { if (stats[p.name]) { divIssues++; details.push(p.name + ' (' + p.team + '): in court data but missing from partners list'); } return; }
         const sum = pList.reduce((s, e) => s + e[1], 0);
-        if (sum !== (stats[p.name]?.gp || 0)) divIssues++;
+        const courtGp = stats[p.name]?.gp || 0;
+        if (sum !== courtGp) { divIssues++; details.push(p.name + ' (' + p.team + '): partner sum=' + sum + ' court GP=' + courtGp); }
       });
     }
+    // Find court names not in player roster
+    const rosterNames = new Set(players.map(p => p.name));
+    Object.keys(stats).forEach(n => {
+      if (!rosterNames.has(n)) { divIssues++; details.push('Court name "' + n + '" (GP=' + stats[n].gp + ') NOT in player roster — typo or missing player?'); }
+    });
     const status = divIssues === 0
       ? '<span style="color:var(--green);font-weight:600">✓ All clear</span>'
       : `<span style="color:var(--red);font-weight:600">✗ ${divIssues} issue(s)</span>`;
-    html += `<div style="margin-bottom:6px"><strong>${label}:</strong> ${status}</div>`;
+    const detailHtml = details.length ? '<div style="font-size:.72rem;color:var(--muted);margin:4px 0 8px 16px;font-family:\'DM Mono\',monospace;line-height:1.8">' + details.map(d => d.includes('NOT in') ? '<span style="color:var(--red)">' + _esc(d) + '</span>' : _esc(d)).join('<br>') + '</div>' : '';
+    html += `<div style="margin-bottom:6px"><strong>${label}:</strong> ${status}</div>${detailHtml}`;
     issues += divIssues;
   }
 
@@ -2051,6 +2057,97 @@ function adminRunIntegrityCheck() {
     ? '<div style="padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;color:var(--green);font-weight:600;margin-bottom:10px">✓ All data consistent — 0 issues found</div>'
     : `<div style="padding:10px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;color:var(--red);font-weight:600;margin-bottom:10px">✗ ${issues} total issue(s) found — run audit-partners.js for details</div>`;
   el.innerHTML = overall + html;
+}
+
+// ─── AUTO FIX STATS (recalculate player GP/Wins from court data) ─────────────
+function adminAutoFixStats() {
+  const el = document.getElementById('integrity-result');
+  let fixed = 0;
+  let details = [];
+
+  function fixDiv(label, players, schedule, partners) {
+    // Build stats from court data (source of truth)
+    const stats = {};
+    schedule.forEach(wk => {
+      if (!wk.matches) return;
+      wk.matches.forEach(m => {
+        if (!m.courts) return;
+        m.courts.forEach(ct => {
+          [[ct.home, ct.win === 'home'], [ct.away, ct.win === 'away']].forEach(([pair, won]) => {
+            pair.split(' / ').map(s => s.trim()).filter(s => s && !s.startsWith('W/O')).forEach(n => {
+              if (!stats[n]) stats[n] = { gp: 0, w: 0 };
+              stats[n].gp++;
+              if (won) stats[n].w++;
+            });
+          });
+        });
+      });
+    });
+
+    // Fix each player's GP and Wins
+    players.forEach(p => {
+      if (p.gamesPlayed === null) return;
+      const s = stats[p.name];
+      if (!s) return;
+      if (s.gp !== p.gamesPlayed || s.w !== p.wins) {
+        details.push(label + ': ' + p.name + ' GP ' + p.gamesPlayed + '→' + s.gp + ', W ' + p.wins + '→' + s.w);
+        p.gamesPlayed = s.gp;
+        p.wins = s.w;
+        fixed++;
+      }
+    });
+
+    // Fix partner sums — rebuild from court data
+    if (partners) {
+      const partnerStats = {};
+      schedule.forEach(wk => {
+        if (!wk.matches) return;
+        wk.matches.forEach(m => {
+          if (!m.courts) return;
+          m.courts.forEach(ct => {
+            [ct.home, ct.away].forEach(pair => {
+              const names = pair.split(' / ').map(s => s.trim()).filter(s => s && !s.startsWith('W/O'));
+              if (names.length === 2) {
+                [0,1].forEach(i => {
+                  const me = names[i], partner = names[1-i];
+                  if (!partnerStats[me]) partnerStats[me] = {};
+                  partnerStats[me][partner] = (partnerStats[me][partner] || 0) + 1;
+                });
+              }
+            });
+          });
+        });
+      });
+      // Update partners object
+      Object.keys(partnerStats).forEach(name => {
+        const sorted = Object.entries(partnerStats[name]).sort((a,b) => b[1] - a[1]);
+        const oldSum = partners[name] ? partners[name].reduce((s,e) => s + e[1], 0) : 0;
+        const newSum = sorted.reduce((s,e) => s + e[1], 0);
+        if (JSON.stringify(partners[name]) !== JSON.stringify(sorted)) {
+          partners[name] = sorted;
+          if (oldSum !== newSum) fixed++;
+        }
+      });
+    }
+  }
+
+  fixDiv('Div I', DIV_I_PLAYERS, DIV_I_SCHEDULE, DIV_I_PARTNERS);
+  fixDiv('Div C', DIV_C_PLAYERS, DIV_C_SCHEDULE, DIV_C_PARTNERS);
+  fixDiv('Div F', DIV_F_PLAYERS, DIV_F_SCHEDULE, DIV_F_PARTNERS);
+  if (typeof DIV_H_PLAYERS !== 'undefined') fixDiv('Div H', DIV_H_PLAYERS, DIV_H_SCHEDULE, typeof DIV_H_PARTNERS !== 'undefined' ? DIV_H_PARTNERS : null);
+
+  if (fixed > 0) {
+    el.innerHTML = '<div style="padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;color:var(--green);font-weight:600;margin-bottom:10px">✓ Fixed ' + fixed + ' issue(s) in memory. Re-run Check to verify.</div>' +
+      '<div style="font-size:.72rem;font-family:\'DM Mono\',monospace;line-height:1.8;color:var(--muted);margin-bottom:10px">' + details.map(d => _esc(d)).join('<br>') + '</div>' +
+      '<div style="font-size:.78rem;color:var(--accent);font-weight:600">⚠ Changes are in memory only. You need to update the JS data files to make them permanent.</div>';
+    // Re-render all pages with corrected data
+    renderStandings(); renderPlayers(); renderSvgClub();
+    renderDivCStandings(); renderDivCPlayers();
+    if (typeof renderDivFStandings === 'function') { renderDivFStandings(); renderDivFPlayers(); }
+    if (typeof renderDivHStandings === 'function') { renderDivHStandings(); renderDivHPlayers(); }
+  } else {
+    el.innerHTML = '<div style="padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;color:var(--green);font-weight:600">✓ No stats to fix — all data matches court records.</div>';
+  }
 }
 
 // ─── DATA LOADER (fetch match results from league.cdta.co.in) ────────────────
