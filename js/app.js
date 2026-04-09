@@ -29,22 +29,46 @@ let divHSortKey = 'gamesPlayed', divHSortDir = -1;
 function _savePageState(div, page) {
   try { location.hash = div + '/' + page; } catch(e) {}
 }
+// Current active division letter (default 'I')
+let _activeDiv = 'I';
+
 function showPage(name, btn) {
   const activeDivBtn = document.querySelector('.div-btn.active');
   const activeDivText = activeDivBtn ? activeDivBtn.textContent.trim() : '';
   if (activeDivText === 'SVG Players') return;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  let pageId = 'page-' + name;
-  let div = 'i';
-  if (activeDivText === 'Division F') { pageId = 'page-divf-' + name; div = 'f'; }
-  else if (activeDivText === 'Division C') { pageId = 'page-divc-' + name; div = 'c'; }
-  else if (activeDivText === 'Division H') { pageId = 'page-divh-' + name; div = 'h'; }
+  let div = _activeDiv.toLowerCase();
+  let pageId = div === 'i' ? 'page-' + name : 'page-div' + div + '-' + name;
   const pg = document.getElementById(pageId);
   if (pg) pg.classList.add('active');
   if (btn) btn.classList.add('active');
   _savePageState(div, name);
   if (typeof _logUsage === 'function') _logUsage('page', name);
+  window.scrollTo(0,0);
+}
+
+// Generic division switcher for all divisions A-K
+function switchToDiv(div, btn) {
+  _activeDiv = div;
+  document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('nav-divs').style.display = 'flex';
+  document.getElementById('nav-svg').style.display = 'none';
+  const ovNav = document.getElementById('nav-overview');
+  if (ovNav) ovNav.style.display = 'none';
+  const adNav = document.getElementById('nav-admin');
+  if (adNav) adNav.style.display = 'none';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const navStandingsBtn = document.querySelector('#nav-divs .nav-btn[onclick*="standings"]');
+  if (navStandingsBtn) navStandingsBtn.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const d = div.toLowerCase();
+  const pageId = d === 'i' ? 'page-standings' : 'page-div' + d + '-standings';
+  const pg = document.getElementById(pageId);
+  if (pg) pg.classList.add('active');
+  _savePageState(d, 'standings');
+  if (typeof _logUsage === 'function') _logUsage('page', 'standings');
   window.scrollTo(0,0);
 }
 
@@ -65,17 +89,22 @@ function _standingRowClass(rank, total) {
 function renderStandings() {
   const tb = document.getElementById('tbody-standings');
   const total = DIV_I_STANDINGS.length;
-  tb.innerHTML = DIV_I_STANDINGS.map(s => `
+  tb.innerHTML = DIV_I_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `
     <tr${_standingRowClass(s.rank, total)}>
       <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
       <td><span class="team-badge">${s.short}</span> ${s.full}</td>
-      <td class="pts-cell">${s.pts}</td>
-      <td>${s.played}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+      <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
       <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
       <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
       <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
       <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 // ─── PROJECTION ──────────────────────────────────────────────────────────────
@@ -121,11 +150,12 @@ function renderMinMaxBreakdown() {
     const pb = b.current + b.fixtures.reduce((s,f) => s+f.projPts, 0);
     return pb - pa;
   }).map(team => {
-    const totalMin = team.current + team.fixtures.reduce((s,f) => s+f.min, 0);
-    const totalMax = team.current + team.fixtures.reduce((s,f) => s+f.max, 0);
-    const totalProj = team.current + team.fixtures.reduce((s,f) => s+f.projPts, 0);
+    const pending = team.fixtures.filter(f => f.actual === undefined);
+    const totalMin = team.current + pending.reduce((s,f) => s+f.min, 0);
+    const totalMax = team.current + pending.reduce((s,f) => s+f.max, 0);
+    const totalProj = team.current + pending.reduce((s,f) => s+f.projPts, 0);
     const isMyTeam = team.short === 'STARS';
-    const rows = team.fixtures.map(f => {
+    const rows = pending.map(f => {
       const pctProj = Math.round((f.projPts/3)*100);
       return `<tr>
         <td style="font-size:.72rem;color:var(--muted);font-family:'DM Mono',monospace">Wk${f.wk}</td>
@@ -212,10 +242,31 @@ function renderTeams() {
 const SCHEDULE_COL_HEADER = '<div style="display:grid;grid-template-columns:1fr 80px 1fr 1fr;gap:10px;padding:5px 16px;margin-bottom:8px;font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;border-bottom:1px solid var(--border)"><div style="text-align:right">Home</div><div style="text-align:center">Score</div><div>Away</div><div>Venue</div></div>';
 const RESULTS_COL_HEADER  = '<div style="display:grid;grid-template-columns:1fr 70px 1fr 1fr;gap:10px;padding:5px 16px;margin-bottom:8px;font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:600;border-bottom:1px solid var(--border)"><div style="text-align:right">Home</div><div style="text-align:center">Score</div><div>Away</div><div>Venue</div></div>';
 
+function populateScheduleFilter() {
+  const weekSel = document.getElementById('schedule-week-filter');
+  const teamSel = document.getElementById('schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_I_SCHEDULE.forEach(wk => {
+    const opt = document.createElement('option');
+    opt.value = wk.week; opt.textContent = 'Week ' + wk.week;
+    weekSel.appendChild(opt);
+  });
+  [...DIV_I_TEAMS.filter(t => t.division === 'I')].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.full; opt.textContent = t.full;
+    teamSel.appendChild(opt);
+  });
+}
+
 function renderSchedule() {
+  const filterWeek = parseInt(document.getElementById('schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('schedule-team-filter')?.value || '';
   const c = document.getElementById('schedule-container');
-  c.innerHTML = SCHEDULE_COL_HEADER + DIV_I_SCHEDULE.map(wk => {
-    const rows = wk.matches.map(m => {
+  const filtered = DIV_I_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const rows = matches.map(m => {
       const titleMatch = m.title ? 'style="border-color:var(--accent);background:rgba(184,122,16,.05)"' : '';
       const scoreCell = m.score
         ? `<div class="match-score">${m.score}</div>`
@@ -472,36 +523,9 @@ function sortTable(tblId, colIdx) {
 }
 
 // ─── DIVISION SWITCHER ────────────────────────────────────────────────────────
-function switchDivision(div, btn) {
-  document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (div !== 'I') { divisionComingSoon(div); btn.classList.remove('active'); return; }
-  document.getElementById('nav-divs').style.display = 'flex';
-  document.getElementById('nav-svg').style.display = 'none';
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-standings').classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const standingsBtn = document.querySelector('#nav-divs .nav-btn[onclick*="standings"]');
-  if (standingsBtn) standingsBtn.classList.add('active');
-  _savePageState('i', 'standings');
-  if (typeof _logUsage === 'function') _logUsage('page', 'standings');
-  window.scrollTo(0,0);
-}
-
-function switchToDivC(btn) {
-  document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('nav-divs').style.display = 'flex';
-  document.getElementById('nav-svg').style.display = 'none';
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navStandingsBtn = document.querySelector('#nav-divs .nav-btn[onclick*="standings"]');
-  if (navStandingsBtn) navStandingsBtn.classList.add('active');
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-divc-standings').classList.add('active');
-  _savePageState('c', 'standings');
-  if (typeof _logUsage === 'function') _logUsage('page', 'standings');
-  window.scrollTo(0,0);
-}
+// Legacy functions — redirect to generic switchToDiv
+function switchDivision(div, btn) { switchToDiv(div, btn); }
+function switchToDivC(btn) { switchToDiv('C', btn); }
 
 // ─── DIVISION C ───────────────────────────────────────────────────────────────
 
@@ -545,10 +569,11 @@ function renderDivCProjBreakdown() {
     const pb = b.current + b.fixtures.reduce((s,f) => s+f.projPts, 0);
     return pb - pa;
   }).map(team => {
-    const totalProj = team.current + team.fixtures.reduce((s,f) => s + f.projPts, 0);
-    const totalMax  = team.current + team.fixtures.reduce((s,f) => s + f.max, 0);
+    const pending = team.fixtures.filter(f => f.actual === undefined);
+    const totalProj = team.current + pending.reduce((s,f) => s + f.projPts, 0);
+    const totalMax  = team.current + pending.reduce((s,f) => s + f.max, 0);
     const isBlues = team.short === 'SVG-C';
-    const rows = team.fixtures.map(f => {
+    const rows = pending.map(f => {
       const isRest = f.venue === '—';
       const pctProj = Math.round((f.projPts / 3) * 100);
       const venueBadge = isRest
@@ -633,14 +658,17 @@ function renderDivCStandings() {
   const total = DIV_C_STANDINGS.length;
   tb.innerHTML = DIV_C_STANDINGS.map(s => {
     const isBlues = s.short === 'SVG-C';
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
     return `<tr${_standingRowClass(s.rank, total)}>
       <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
       <td>
         <span class="team-badge">${s.short}</span> ${s.full}
         ${isBlues ? '<span style="font-size:.62rem;color:var(--accent);background:rgba(184,122,16,.15);padding:2px 7px;border-radius:3px;margin-left:4px">SVG CLUB</span>' : ''}
       </td>
-      <td class="pts-cell">${s.pts}</td>
-      <td>${s.played}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+      <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
       <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
       <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
       <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
@@ -650,11 +678,36 @@ function renderDivCStandings() {
 }
 
 
+function populateDivCScheduleFilter() {
+  const weekSel = document.getElementById('divc-schedule-week-filter');
+  const teamSel = document.getElementById('divc-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_C_SCHEDULE.forEach(wk => {
+    const opt = document.createElement('option');
+    opt.value = wk.week; opt.textContent = 'Week ' + wk.week;
+    weekSel.appendChild(opt);
+  });
+  [...DIV_C_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.full; opt.textContent = t.full;
+    teamSel.appendChild(opt);
+  });
+}
+
 function renderDivCSchedule() {
+  const filterWeek = parseInt(document.getElementById('divc-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divc-schedule-team-filter')?.value || '';
   const c = document.getElementById('divc-schedule-container');
   if (!c) return;
-  c.innerHTML = SCHEDULE_COL_HEADER + DIV_C_SCHEDULE.map(wk => {
-    const rows = wk.matches.map(m => {
+  const filtered = DIV_C_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => {
+      if (!filterTeam) return true;
+      if (m.rest) return m.away === filterTeam;
+      return m.home === filterTeam || m.away === filterTeam;
+    });
+    if (matches.length === 0) return '';
+    const rows = matches.map(m => {
       if (m.rest) return `<div class="match-row" style="opacity:.45;background:var(--surface2)">
         <div class="match-home" style="color:var(--muted);font-style:italic">REST</div>
         <div class="match-score" style="color:var(--muted);font-size:.72rem">BYE</div>
@@ -926,8 +979,9 @@ function renderSvgClub() {
       ? pList.map(([n,c]) => `${n}<span style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--muted);margin-left:2px">(${c})</span>`).join(' · ')
       : '<span style="color:var(--muted)">—</span>';
 
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
     return `<tr${isMe ? ' style="background:#fffbeb"' : ''}>
-      <td>${p.name}${p.age===80?' 🏅':''}${capTag}</td>
+      <td>${photoHtml}${p.name}${p.age===80?' 🏅':''}${capTag}</td>
       <td style="font-size:.75rem;color:var(--muted);font-family:'DM Mono',monospace">${divLabel}</td>
       <td><span class="team-badge">${p.team}</span></td>
       ${genderCell}
@@ -1274,11 +1328,180 @@ function switchToSvgClub(btn) {
   btn.classList.add('active');
   document.getElementById('nav-divs').style.display = 'none';
   document.getElementById('nav-svg').style.display = 'flex';
+  const ovNav = document.getElementById('nav-overview');
+  if (ovNav) ovNav.style.display = 'none';
+  const adNav = document.getElementById('nav-admin');
+  if (adNav) adNav.style.display = 'none';
   _savePageState('svg', 'svgclub');
   showPageDirect('svgclub');
   // Default to Club Performance sub-tab
   const perfBtn = document.getElementById('svgsubbtn-performance');
   if (perfBtn) showSvgTab('performance', perfBtn);
+}
+
+// ═══════════════ OVERVIEW (Consolidated Dashboard) ═══════════════
+function switchToOverview(btn) {
+  document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('nav-divs').style.display = 'none';
+  document.getElementById('nav-svg').style.display = 'none';
+  const ovNav = document.getElementById('nav-overview');
+  if (ovNav) ovNav.style.display = 'flex';
+  const adNav = document.getElementById('nav-admin');
+  if (adNav) adNav.style.display = 'none';
+  _savePageState('overview', 'leaders');
+  renderOverviewLeaders();
+  renderOverviewTeams();
+  renderOverviewStats();
+  showOverviewTab('leaders', document.getElementById('ovsubbtn-leaders'));
+}
+
+function showOverviewTab(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-overview-' + name).classList.add('active');
+  document.querySelectorAll('#nav-overview .nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  _savePageState('overview', name);
+  if (typeof _logUsage === 'function') _logUsage('page', 'overview-' + name);
+  window.scrollTo(0,0);
+}
+
+// Helper: get all divisions as array of {letter, standings, teams, schedule, players}
+function _getAllDivisions() {
+  const divs = [];
+  const all = [
+    ['A', typeof DIV_A_STANDINGS!=='undefined'?DIV_A_STANDINGS:null, typeof DIV_A_TEAMS!=='undefined'?DIV_A_TEAMS:null, typeof DIV_A_SCHEDULE!=='undefined'?DIV_A_SCHEDULE:null, typeof DIV_A_PLAYERS!=='undefined'?DIV_A_PLAYERS:null],
+    ['B', typeof DIV_B_STANDINGS!=='undefined'?DIV_B_STANDINGS:null, typeof DIV_B_TEAMS!=='undefined'?DIV_B_TEAMS:null, typeof DIV_B_SCHEDULE!=='undefined'?DIV_B_SCHEDULE:null, typeof DIV_B_PLAYERS!=='undefined'?DIV_B_PLAYERS:null],
+    ['C', typeof DIV_C_STANDINGS!=='undefined'?DIV_C_STANDINGS:null, typeof DIV_C_TEAMS!=='undefined'?DIV_C_TEAMS:null, typeof DIV_C_SCHEDULE!=='undefined'?DIV_C_SCHEDULE:null, typeof DIV_C_PLAYERS!=='undefined'?DIV_C_PLAYERS:null],
+    ['D', typeof DIV_D_STANDINGS!=='undefined'?DIV_D_STANDINGS:null, typeof DIV_D_TEAMS!=='undefined'?DIV_D_TEAMS:null, typeof DIV_D_SCHEDULE!=='undefined'?DIV_D_SCHEDULE:null, typeof DIV_D_PLAYERS!=='undefined'?DIV_D_PLAYERS:null],
+    ['E', typeof DIV_E_STANDINGS!=='undefined'?DIV_E_STANDINGS:null, typeof DIV_E_TEAMS!=='undefined'?DIV_E_TEAMS:null, typeof DIV_E_SCHEDULE!=='undefined'?DIV_E_SCHEDULE:null, typeof DIV_E_PLAYERS!=='undefined'?DIV_E_PLAYERS:null],
+    ['F', typeof DIV_F_STANDINGS!=='undefined'?DIV_F_STANDINGS:null, typeof DIV_F_TEAMS!=='undefined'?DIV_F_TEAMS:null, typeof DIV_F_SCHEDULE!=='undefined'?DIV_F_SCHEDULE:null, typeof DIV_F_PLAYERS!=='undefined'?DIV_F_PLAYERS:null],
+    ['G', typeof DIV_G_STANDINGS!=='undefined'?DIV_G_STANDINGS:null, typeof DIV_G_TEAMS!=='undefined'?DIV_G_TEAMS:null, typeof DIV_G_SCHEDULE!=='undefined'?DIV_G_SCHEDULE:null, typeof DIV_G_PLAYERS!=='undefined'?DIV_G_PLAYERS:null],
+    ['H', typeof DIV_H_STANDINGS!=='undefined'?DIV_H_STANDINGS:null, typeof DIV_H_TEAMS!=='undefined'?DIV_H_TEAMS:null, typeof DIV_H_SCHEDULE!=='undefined'?DIV_H_SCHEDULE:null, typeof DIV_H_PLAYERS!=='undefined'?DIV_H_PLAYERS:null],
+    ['I', typeof DIV_I_STANDINGS!=='undefined'?DIV_I_STANDINGS:null, typeof DIV_I_TEAMS!=='undefined'?DIV_I_TEAMS:null, typeof DIV_I_SCHEDULE!=='undefined'?DIV_I_SCHEDULE:null, typeof DIV_I_PLAYERS!=='undefined'?DIV_I_PLAYERS:null],
+    ['J', typeof DIV_J_STANDINGS!=='undefined'?DIV_J_STANDINGS:null, typeof DIV_J_TEAMS!=='undefined'?DIV_J_TEAMS:null, typeof DIV_J_SCHEDULE!=='undefined'?DIV_J_SCHEDULE:null, typeof DIV_J_PLAYERS!=='undefined'?DIV_J_PLAYERS:null],
+    ['K', typeof DIV_K_STANDINGS!=='undefined'?DIV_K_STANDINGS:null, typeof DIV_K_TEAMS!=='undefined'?DIV_K_TEAMS:null, typeof DIV_K_SCHEDULE!=='undefined'?DIV_K_SCHEDULE:null, typeof DIV_K_PLAYERS!=='undefined'?DIV_K_PLAYERS:null],
+  ];
+  for (const [letter, st, tm, sc, pl] of all) {
+    if (st && tm && sc && pl) divs.push({ letter, standings: st, teams: tm, schedule: sc, players: pl });
+  }
+  return divs;
+}
+
+function renderOverviewLeaders() {
+  const divs = _getAllDivisions();
+  let totalTeams = 0, totalPlayers = 0, totalMatches = 0, totalCourts = 0;
+  divs.forEach(d => {
+    totalTeams += d.teams.length;
+    totalPlayers += d.players.length;
+    d.schedule.forEach(wk => {
+      if (!wk.matches) return;
+      wk.matches.forEach(m => {
+        if (m.rest || !m.score) return;
+        totalMatches++;
+        if (m.courts) totalCourts += m.courts.length;
+      });
+    });
+  });
+  const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+  setEl('ov-total-divs', divs.length);
+  setEl('ov-total-teams', totalTeams);
+  setEl('ov-total-players', totalPlayers);
+  setEl('ov-total-matches', totalMatches);
+  setEl('ov-total-courts', totalCourts);
+
+  // Leader cards
+  const grid = document.getElementById('ov-leaders-grid');
+  if (!grid) return;
+  grid.innerHTML = divs.map(d => {
+    const top3 = d.standings.slice(0, 3);
+    const rows = top3.map((s,i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+      return `<div style="display:flex;gap:8px;align-items:center;padding:4px 0;font-size:.8rem">
+        <span>${medal}</span>
+        <span class="team-badge" style="font-size:.68rem">${_esc(s.short)}</span>
+        <span style="flex:1;color:var(--text)">${_esc(s.full)}</span>
+        <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--accent)">${s.pts}</span>
+      </div>`;
+    }).join('');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
+      <div style="font-weight:700;font-size:.95rem;margin-bottom:10px;color:var(--accent2)">Division ${d.letter}</div>
+      ${rows}
+      <div style="font-size:.68rem;color:var(--muted);margin-top:8px;padding-top:6px;border-top:1px dashed var(--border)">${d.teams.length} teams · ${d.players.length} players</div>
+    </div>`;
+  }).join('');
+}
+
+function renderOverviewTeams() {
+  const filterDiv = (document.getElementById('ov-team-div-filter') || {}).value || '';
+  const search = ((document.getElementById('ov-team-search') || {}).value || '').toLowerCase();
+  const divs = _getAllDivisions();
+  const rows = [];
+  divs.forEach(d => {
+    if (filterDiv && d.letter !== filterDiv) return;
+    d.standings.forEach(s => {
+      if (search && !s.full.toLowerCase().includes(search) && !s.short.toLowerCase().includes(search)) return;
+      rows.push({ div: d.letter, rank: s.rank, short: s.short, full: s.full, pts: s.pts, setsW: s.setsW, setsL: s.setsL, gamesW: s.gamesW, gamesL: s.gamesL });
+    });
+  });
+  const tb = document.getElementById('tbody-ov-teams');
+  if (!tb) return;
+  tb.innerHTML = rows.map((r, i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><span class="team-badge">Div ${r.div}</span></td>
+    <td>${r.rank}</td>
+    <td><strong>${_esc(r.full)}</strong> <span style="font-size:.72rem;color:var(--muted)">(${_esc(r.short)})</span></td>
+    <td class="pts-cell">${r.pts}</td>
+    <td class="text-mono">${r.setsW}-${r.setsL}</td>
+    <td class="text-mono">${r.gamesW}-${r.gamesL}</td>
+  </tr>`).join('');
+  const cnt = document.getElementById('ov-team-count');
+  if (cnt) cnt.textContent = `Showing ${rows.length} teams`;
+}
+
+function renderOverviewStats() {
+  const divs = _getAllDivisions();
+  const tb = document.getElementById('tbody-ov-stats');
+  if (!tb) return;
+  let totT=0, totP=0, totM=0, totC=0;
+  const rows = divs.map(d => {
+    let matches = 0, courts = 0;
+    d.schedule.forEach(wk => {
+      if (!wk.matches) return;
+      wk.matches.forEach(m => {
+        if (m.rest || !m.score) return;
+        matches++;
+        if (m.courts) courts += m.courts.length;
+      });
+    });
+    totT += d.teams.length;
+    totP += d.players.length;
+    totM += matches;
+    totC += courts;
+    const top = d.standings[0] || {};
+    return `<tr>
+      <td><strong>Division ${d.letter}</strong></td>
+      <td class="text-mono">${d.teams.length}</td>
+      <td class="text-mono">${d.players.length}</td>
+      <td class="text-mono">${d.schedule.length}</td>
+      <td class="text-mono">${matches}</td>
+      <td class="text-mono">${courts}</td>
+      <td>${_esc(top.full || '-')}</td>
+      <td class="pts-cell">${top.pts || '-'}</td>
+    </tr>`;
+  });
+  // Add totals row
+  rows.push(`<tr style="background:var(--surface2);font-weight:700;border-top:2px solid var(--accent)">
+    <td><strong style="color:var(--accent)">TOTAL</strong></td>
+    <td class="text-mono"><strong>${totT}</strong></td>
+    <td class="text-mono"><strong>${totP}</strong></td>
+    <td class="text-mono">—</td>
+    <td class="text-mono"><strong>${totM}</strong></td>
+    <td class="text-mono"><strong>${totC}</strong></td>
+    <td>—</td>
+    <td>—</td>
+  </tr>`);
+  tb.innerHTML = rows.join('');
 }
 
 function showPageDirect(name) {
@@ -1296,10 +1519,6 @@ function updateDivHVisibility(user) {
   const u = user ? USERS[user] : null;
   const isAdmin = u && u.role === 'admin';
 
-  // Division H: admin only
-  const btnH = document.getElementById('btn-div-h');
-  if (btnH) btnH.style.display = (DIV_H_USERS && DIV_H_USERS.includes(user)) ? '' : 'none';
-
   // Admin tab: admin only
   const btnAdmin = document.getElementById('btn-admin');
   if (btnAdmin) btnAdmin.style.display = isAdmin ? '' : 'none';
@@ -1308,27 +1527,18 @@ function updateDivHVisibility(user) {
   const rankBtn = document.getElementById('svgsubbtn-rank');
   if (rankBtn) rankBtn.style.display = isAdmin ? '' : 'none';
 
-  // Division visibility for captains: show only their division + SVG
-  const divBtns = {
-    'I': document.querySelector('.div-btn[onclick*="switchDivision(\'I\'"]') || document.querySelector('.div-btn[onclick*="switchDivision"]'),
-    'F': document.querySelector('.div-btn[onclick*="switchToDivF"]'),
-    'C': document.querySelector('.div-btn[onclick*="switchToDivC"]'),
-  };
-  const svgBtn = document.querySelector('.div-btn[onclick*="switchToSvgClub"]');
+  // ALL division tabs (A-K) visible to ALL users (admin, captain, viewer, svgplayer)
+  const allDivLetters = ['A','B','C','D','E','F','G','H','I','J','K'];
+  allDivLetters.forEach(d => {
+    const b = document.getElementById('btn-div-' + d.toLowerCase());
+    if (b) b.style.display = '';
+  });
 
-  if (isAdmin || !u) {
-    // Admin or no user: show all division tabs
-    Object.values(divBtns).forEach(b => { if (b) b.style.display = ''; });
-    if (svgBtn) svgBtn.style.display = '';
-  } else {
-    // Captain/svgplayer/viewer: show only their division + SVG Players
-    const userDiv = u.division;
-    Object.entries(divBtns).forEach(([div, b]) => {
-      if (b) b.style.display = (div === userDiv) ? '' : 'none';
-    });
-    // Captains and SVG players can see SVG Players tab
-    if (svgBtn) svgBtn.style.display = (u.role === 'captain' || u.role === 'svgplayer') ? '' : 'none';
-  }
+  // Overview and SVG Players tabs: visible to everyone
+  const svgBtn = document.querySelector('.div-btn[onclick*="switchToSvgClub"]');
+  if (svgBtn) svgBtn.style.display = '';
+  const ovBtn = document.querySelector('.div-btn[onclick*="switchToOverview"]');
+  if (ovBtn) ovBtn.style.display = '';
 
   // Display name
   const userEl = document.getElementById('logged-in-user');
@@ -1426,18 +1636,24 @@ function switchToAdmin(btn) {
   btn.classList.add('active');
   document.getElementById('nav-divs').style.display = 'none';
   document.getElementById('nav-svg').style.display = 'none';
+  const ovNav = document.getElementById('nav-overview');
+  if (ovNav) ovNav.style.display = 'none';
+  const adNav = document.getElementById('nav-admin');
+  if (adNav) adNav.style.display = 'flex';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-admin').classList.add('active');
-  renderAdminUsers();
+  // Default to Users sub-tab
+  const usersBtn = document.getElementById('adsubbtn-users');
+  if (usersBtn) showAdminTab('users', usersBtn);
   _savePageState('admin', 'users');
   if (typeof _logUsage === 'function') _logUsage('page', 'users');
   window.scrollTo(0,0);
 }
 
 function showAdminTab(tab, btn) {
-  // Toggle sub-nav buttons
-  document.querySelectorAll('.admin-subnav').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  // Toggle sub-nav buttons (new nav-admin .nav-btn style)
+  document.querySelectorAll('#nav-admin .nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
   // Toggle panels
   ['users','login','usage','activity','testplan','data','settings'].forEach(t => {
     const el = document.getElementById('admin-' + t);
@@ -1450,6 +1666,7 @@ function showAdminTab(tab, btn) {
   if (tab === 'users') renderAdminUsers();
   if (tab === 'activity') renderActivityLog();
   if (tab === 'testplan') renderTestPlan();
+  if (tab === 'settings') renderSettingsStats();
   _savePageState('admin', tab);
   if (typeof _logUsage === 'function') _logUsage('page', tab);
 }
@@ -1803,6 +2020,56 @@ const TEST_PLAN_DATA = [
     { id:'DATA-002', name:'Standings match results', steps:'Sum court wins from schedule', expected:'Matches standings pts for each team', priority:'High' },
     { id:'DATA-003', name:'Projection math', steps:'Verify projected = current + expected', expected:'Values consistent', priority:'Medium' },
     { id:'DATA-004', name:'XSS prevention', steps:'Enter <script>alert(1)</script> in search', expected:'HTML escaped, no execution', priority:'Medium' },
+    { id:'DATA-PTS-A', name:'Div A: projection pts match standings', steps:'Compare DIV_A_PROJECTIONS.current to DIV_A_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-B', name:'Div B: projection pts match standings', steps:'Compare DIV_B_PROJECTIONS.current to DIV_B_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-C', name:'Div C: projection pts match standings', steps:'Compare DIV_C_PROJECTIONS.current to DIV_C_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-D', name:'Div D: projection pts match standings', steps:'Compare DIV_D_PROJECTIONS.current to DIV_D_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-E', name:'Div E: projection pts match standings', steps:'Compare DIV_E_PROJECTIONS.current to DIV_E_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-F', name:'Div F: projection pts match standings', steps:'Compare DIV_F_PROJECTIONS.current to DIV_F_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-G', name:'Div G: projection pts match standings', steps:'Compare DIV_G_PROJECTIONS.current to DIV_G_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-H', name:'Div H: projection pts match standings', steps:'Compare DIV_H_PROJECTIONS.current to DIV_H_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-I', name:'Div I: projection pts match standings', steps:'Compare DIV_I_PROJECTIONS.current to DIV_I_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-J', name:'Div J: projection pts match standings', steps:'Compare DIV_J_PROJECTIONS.current to DIV_J_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+    { id:'DATA-PTS-K', name:'Div K: projection pts match standings', steps:'Compare DIV_K_PROJECTIONS.current to DIV_K_STANDINGS.pts', expected:'All teams: current === pts', priority:'High' },
+  ]},
+  { area:'Per-Division Coverage', tests:[
+    { id:'DIV-A-001', name:'Div A loads', steps:'Click Div A tab', expected:'Standings, teams, schedule, results, players all render with data', priority:'High' },
+    { id:'DIV-A-002', name:'Div A 11 teams', steps:'Check standings table', expected:'Exactly 11 teams listed', priority:'High' },
+    { id:'DIV-A-003', name:'Div A 11 weeks complete', steps:'Check schedule', expected:'All 11 weeks marked done, 55 matches total', priority:'High' },
+    { id:'DIV-A-004', name:'Div A player photos', steps:'Click Players page', expected:'Player photos visible from cdta.co.in', priority:'Medium' },
+    { id:'DIV-B-001', name:'Div B loads', steps:'Click Div B tab', expected:'All pages render with data', priority:'High' },
+    { id:'DIV-B-002', name:'Div B 11 teams', steps:'Check standings', expected:'11 teams', priority:'High' },
+    { id:'DIV-B-003', name:'Div B 11 weeks complete', steps:'Check schedule', expected:'55 matches across 11 weeks', priority:'High' },
+    { id:'DIV-C-001', name:'Div C loads', steps:'Click Div C tab', expected:'Standings, projection, teams, schedule, results, players, stats', priority:'High' },
+    { id:'DIV-C-002', name:'Div C 11 teams', steps:'Check standings', expected:'11 teams listed', priority:'High' },
+    { id:'DIV-C-003', name:'Div C projection page works', steps:'Click Projection tab', expected:'All teams shown with current/expected/projected', priority:'High' },
+    { id:'DIV-C-004', name:'Div C SVG-C team highlighted', steps:'Check standings', expected:'SREEVATSA BLUES row has SVG CLUB badge', priority:'Medium' },
+    { id:'DIV-D-001', name:'Div D loads', steps:'Click Div D tab', expected:'All pages render with data', priority:'High' },
+    { id:'DIV-D-002', name:'Div D 11 teams', steps:'Check standings', expected:'11 teams', priority:'High' },
+    { id:'DIV-D-003', name:'Div D 11 weeks complete', steps:'Check schedule', expected:'55 matches', priority:'High' },
+    { id:'DIV-E-001', name:'Div E loads', steps:'Click Div E tab', expected:'All pages render with data', priority:'High' },
+    { id:'DIV-E-002', name:'Div E 11 teams', steps:'Check standings', expected:'11 teams', priority:'High' },
+    { id:'DIV-E-003', name:'Div E 11 weeks complete', steps:'Check schedule', expected:'55 matches', priority:'High' },
+    { id:'DIV-F-001', name:'Div F loads', steps:'Click Div F tab', expected:'Standings, projection, teams, schedule, results, players, stats', priority:'High' },
+    { id:'DIV-F-002', name:'Div F 11 teams', steps:'Check standings', expected:'11 teams listed', priority:'High' },
+    { id:'DIV-F-003', name:'Div F projection page works', steps:'Click Projection tab', expected:'All teams shown', priority:'High' },
+    { id:'DIV-F-004', name:'Div F ACES highlighted', steps:'Check standings', expected:'SREEVATSA ACES has SVG CLUB badge', priority:'Medium' },
+    { id:'DIV-G-001', name:'Div G loads', steps:'Click Div G tab', expected:'All pages render with data', priority:'High' },
+    { id:'DIV-G-002', name:'Div G 11 teams', steps:'Check standings', expected:'11 teams', priority:'High' },
+    { id:'DIV-G-003', name:'Div G 11 weeks complete', steps:'Check schedule', expected:'55 matches', priority:'High' },
+    { id:'DIV-H-001', name:'Div H loads (admin only)', steps:'Login as admin, click Div H', expected:'Standings, projection, teams, schedule, results, players, stats', priority:'High' },
+    { id:'DIV-H-002', name:'Div H hidden for non-admin', steps:'Login as captain, check tabs', expected:'Div H tab hidden', priority:'High' },
+    { id:'DIV-H-003', name:'Div H 11 teams', steps:'Check standings', expected:'11 teams', priority:'High' },
+    { id:'DIV-I-001', name:'Div I default tab', steps:'Login as admin, no other clicks', expected:'Div I active by default', priority:'High' },
+    { id:'DIV-I-002', name:'Div I 11 teams', steps:'Check standings', expected:'11 teams', priority:'High' },
+    { id:'DIV-I-003', name:'Div I projection page', steps:'Click Projection', expected:'All 11 teams with current/expected/projected', priority:'High' },
+    { id:'DIV-I-004', name:'Div I STARS/CHAMPS highlighted', steps:'Check standings', expected:'SREEVATSA STARS and SVG Champs have YOUR TEAM/SVG CLUB badge', priority:'Medium' },
+    { id:'DIV-J-001', name:'Div J loads', steps:'Click Div J tab', expected:'All pages render', priority:'High' },
+    { id:'DIV-J-002', name:'Div J 10 teams', steps:'Check standings', expected:'10 teams (not 11)', priority:'High' },
+    { id:'DIV-J-003', name:'Div J 9 weeks', steps:'Check schedule', expected:'9 weeks, 45 matches', priority:'High' },
+    { id:'DIV-K-001', name:'Div K loads', steps:'Click Div K tab', expected:'All pages render', priority:'High' },
+    { id:'DIV-K-002', name:'Div K 7 teams', steps:'Check standings', expected:'7 teams', priority:'High' },
+    { id:'DIV-K-003', name:'Div K 7 weeks', steps:'Check schedule', expected:'7 weeks, 21 matches', priority:'High' },
   ]},
 ];
 
@@ -1888,26 +2155,39 @@ async function runAutoTest() {
   log('RBAC-004', 'Div H button exists', document.getElementById('btn-div-h') ? 'PASS' : 'FAIL', '');
   log('RBAC-005', 'Admin button exists', document.getElementById('btn-admin') ? 'PASS' : 'FAIL', '');
 
-  // Data tests
-  log('DATA-001', 'Div I: 11 teams in standings', DIV_I_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_I_STANDINGS.length + ' teams');
-  log('DATA-002', 'Div C: 11 teams in standings', DIV_C_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_C_STANDINGS.length + ' teams');
-  log('DATA-003', 'Div F: 11 teams in standings', DIV_F_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_F_STANDINGS.length + ' teams');
-  log('DATA-004', 'Div H: 11 teams in standings', DIV_H_STANDINGS.length === 11 ? 'PASS' : 'FAIL', DIV_H_STANDINGS.length + ' teams');
+  // Data tests — all 11 divisions A-K
+  // Expected counts: A-I = 11 teams, J = 10 teams, K = 7 teams
+  const allDivs = [
+    ['A', typeof DIV_A_STANDINGS !== 'undefined' ? DIV_A_STANDINGS : null, typeof DIV_A_TEAMS !== 'undefined' ? DIV_A_TEAMS : null, typeof DIV_A_SCHEDULE !== 'undefined' ? DIV_A_SCHEDULE : null, typeof DIV_A_PLAYERS !== 'undefined' ? DIV_A_PLAYERS : null, 11, 11],
+    ['B', typeof DIV_B_STANDINGS !== 'undefined' ? DIV_B_STANDINGS : null, typeof DIV_B_TEAMS !== 'undefined' ? DIV_B_TEAMS : null, typeof DIV_B_SCHEDULE !== 'undefined' ? DIV_B_SCHEDULE : null, typeof DIV_B_PLAYERS !== 'undefined' ? DIV_B_PLAYERS : null, 11, 11],
+    ['C', DIV_C_STANDINGS, DIV_C_TEAMS, DIV_C_SCHEDULE, DIV_C_PLAYERS, 11, 11],
+    ['D', typeof DIV_D_STANDINGS !== 'undefined' ? DIV_D_STANDINGS : null, typeof DIV_D_TEAMS !== 'undefined' ? DIV_D_TEAMS : null, typeof DIV_D_SCHEDULE !== 'undefined' ? DIV_D_SCHEDULE : null, typeof DIV_D_PLAYERS !== 'undefined' ? DIV_D_PLAYERS : null, 11, 11],
+    ['E', typeof DIV_E_STANDINGS !== 'undefined' ? DIV_E_STANDINGS : null, typeof DIV_E_TEAMS !== 'undefined' ? DIV_E_TEAMS : null, typeof DIV_E_SCHEDULE !== 'undefined' ? DIV_E_SCHEDULE : null, typeof DIV_E_PLAYERS !== 'undefined' ? DIV_E_PLAYERS : null, 11, 11],
+    ['F', DIV_F_STANDINGS, DIV_F_TEAMS, DIV_F_SCHEDULE, DIV_F_PLAYERS, 11, 11],
+    ['G', typeof DIV_G_STANDINGS !== 'undefined' ? DIV_G_STANDINGS : null, typeof DIV_G_TEAMS !== 'undefined' ? DIV_G_TEAMS : null, typeof DIV_G_SCHEDULE !== 'undefined' ? DIV_G_SCHEDULE : null, typeof DIV_G_PLAYERS !== 'undefined' ? DIV_G_PLAYERS : null, 11, 11],
+    ['H', DIV_H_STANDINGS, DIV_H_TEAMS, DIV_H_SCHEDULE, DIV_H_PLAYERS, 11, 11],
+    ['I', DIV_I_STANDINGS, DIV_I_TEAMS, DIV_I_SCHEDULE, DIV_I_PLAYERS, 11, 11],
+    ['J', typeof DIV_J_STANDINGS !== 'undefined' ? DIV_J_STANDINGS : null, typeof DIV_J_TEAMS !== 'undefined' ? DIV_J_TEAMS : null, typeof DIV_J_SCHEDULE !== 'undefined' ? DIV_J_SCHEDULE : null, typeof DIV_J_PLAYERS !== 'undefined' ? DIV_J_PLAYERS : null, 10, 9],
+    ['K', typeof DIV_K_STANDINGS !== 'undefined' ? DIV_K_STANDINGS : null, typeof DIV_K_TEAMS !== 'undefined' ? DIV_K_TEAMS : null, typeof DIV_K_SCHEDULE !== 'undefined' ? DIV_K_SCHEDULE : null, typeof DIV_K_PLAYERS !== 'undefined' ? DIV_K_PLAYERS : null, 7, 7],
+  ];
 
-  log('DATA-005', 'Div I: 11 teams array', DIV_I_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_I_TEAMS.length + ' teams');
-  log('DATA-006', 'Div C: 11 teams array', DIV_C_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_C_TEAMS.length + ' teams');
-  log('DATA-007', 'Div F: 11 teams array', DIV_F_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_F_TEAMS.length + ' teams');
-  log('DATA-008', 'Div H: 11 teams array', DIV_H_TEAMS.length === 11 ? 'PASS' : 'FAIL', DIV_H_TEAMS.length + ' teams');
-
-  // Schedule tests
-  [['I', DIV_I_SCHEDULE], ['C', DIV_C_SCHEDULE], ['F', DIV_F_SCHEDULE], ['H', DIV_H_SCHEDULE]].forEach(([d, sched]) => {
-    log('DATA-SCH-'+d, 'Div '+d+': 11 weeks in schedule', sched.length === 11 ? 'PASS' : 'FAIL', sched.length + ' weeks');
+  allDivs.forEach(([d, stand, teams, sched, players, expTeams, expWeeks]) => {
+    if (!stand) { log('DATA-STD-'+d, 'Div '+d+': standings exists', 'SKIP', 'not loaded'); return; }
+    log('DATA-STD-'+d, 'Div '+d+': '+expTeams+' teams in standings', stand.length === expTeams ? 'PASS' : 'FAIL', stand.length + ' teams');
+    log('DATA-TMS-'+d, 'Div '+d+': '+expTeams+' teams array', teams && teams.length === expTeams ? 'PASS' : 'FAIL', (teams ? teams.length : 0) + ' teams');
+    log('DATA-SCH-'+d, 'Div '+d+': '+expWeeks+' weeks in schedule', sched && sched.length === expWeeks ? 'PASS' : 'FAIL', (sched ? sched.length : 0) + ' weeks');
+    log('DATA-PLR-'+d, 'Div '+d+': players array populated', players && players.length > 50 ? 'PASS' : 'FAIL', (players ? players.length : 0) + ' players');
   });
 
-  // Projection tests
-  [['I', DIV_I_PROJECTIONS, DIV_I_STANDINGS], ['C', DIV_C_PROJECTIONS, DIV_C_STANDINGS], ['F', DIV_F_PROJECTIONS, DIV_F_STANDINGS], ['H', DIV_H_PROJECTIONS, DIV_H_STANDINGS]].forEach(([d, proj, stand]) => {
+  // Projection tests — only divisions with PROJECTIONS arrays (manual divs C, F, H, I)
+  [
+    ['C', typeof DIV_C_PROJECTIONS !== 'undefined' ? DIV_C_PROJECTIONS : null, DIV_C_STANDINGS],
+    ['F', typeof DIV_F_PROJECTIONS !== 'undefined' ? DIV_F_PROJECTIONS : null, DIV_F_STANDINGS],
+    ['H', typeof DIV_H_PROJECTIONS !== 'undefined' ? DIV_H_PROJECTIONS : null, DIV_H_STANDINGS],
+    ['I', typeof DIV_I_PROJECTIONS !== 'undefined' ? DIV_I_PROJECTIONS : null, DIV_I_STANDINGS],
+  ].forEach(([d, proj, stand]) => {
+    if (!proj) { log('DATA-PTS-'+d, 'Div '+d+': projections exist', 'SKIP', ''); return; }
     log('DATA-PRJ-'+d, 'Div '+d+': projections count', proj.length === 11 ? 'PASS' : 'FAIL', proj.length + ' entries');
-    // Check current pts match standings
     let mismatch = 0;
     proj.forEach(p => {
       const s = stand.find(x => x.short === p.short);
@@ -1916,26 +2196,22 @@ async function runAutoTest() {
     log('DATA-PTS-'+d, 'Div '+d+': projection pts match standings', mismatch === 0 ? 'PASS' : 'FAIL', mismatch > 0 ? mismatch + ' mismatches' : '');
   });
 
-  // Player count tests
-  log('DATA-PLR-I', 'Div I: players array populated', DIV_I_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_I_PLAYERS.length + ' players');
-  log('DATA-PLR-C', 'Div C: players array populated', DIV_C_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_C_PLAYERS.length + ' players');
-  log('DATA-PLR-F', 'Div F: players array populated', DIV_F_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_F_PLAYERS.length + ' players');
-  log('DATA-PLR-H', 'Div H: players array populated', DIV_H_PLAYERS.length > 50 ? 'PASS' : 'FAIL', DIV_H_PLAYERS.length + ' players');
-
   // DOM element tests
   const domIds = ['tbody-standings','tbody-divc-standings','tbody-divf-standings','tbody-divh-standings','tbody-teams','page-admin','login-overlay'];
   domIds.forEach(id => {
     log('DOM-'+id.substring(0,12), 'Element #'+id+' exists', document.getElementById(id) ? 'PASS' : 'FAIL', '');
   });
 
-  // Completed weeks count
-  [['I', DIV_I_SCHEDULE], ['C', DIV_C_SCHEDULE], ['F', DIV_F_SCHEDULE], ['H', DIV_H_SCHEDULE]].forEach(([d, sched]) => {
+  // Completed weeks count — all 11 divisions
+  allDivs.forEach(([d, stand, teams, sched, players, expTeams, expWeeks]) => {
+    if (!sched) return;
     const done = sched.filter(w => w.done).length;
-    log('WK-DONE-'+d, 'Div '+d+': completed weeks', done >= 8 ? 'PASS' : 'FAIL', done + ' of 11 done');
+    log('WK-DONE-'+d, 'Div '+d+': completed weeks', done === expWeeks ? 'PASS' : 'FAIL', done + ' of ' + expWeeks + ' done');
   });
 
-  // Court data integrity (sample: check each completed match has 3 courts)
-  [['I', DIV_I_SCHEDULE], ['C', DIV_C_SCHEDULE], ['F', DIV_F_SCHEDULE]].forEach(([d, sched]) => {
+  // Court data integrity (sample: check each completed match has 3 courts) — all divisions
+  allDivs.forEach(([d, stand, teams, sched, players, expTeams, expWeeks]) => {
+    if (!sched) return;
     let bad = 0, checked = 0;
     sched.forEach(wk => {
       if (!wk.done) return;
@@ -2035,10 +2311,13 @@ function adminRunIntegrityCheck() {
         if (sum !== courtGp) { divIssues++; details.push(p.name + ' (' + p.team + '): partner sum=' + sum + ' court GP=' + courtGp); }
       });
     }
-    // Find court names not in player roster
-    const rosterNames = new Set(players.map(p => p.name));
+    // Find court names not in player roster (with fuzzy matching for case/punctuation/space)
+    const norm = s => s.toLowerCase().replace(/[\s.\-_]/g, '');
+    const rosterNorm = new Set(players.map(p => norm(p.name)));
     Object.keys(stats).forEach(n => {
-      if (!rosterNames.has(n)) { divIssues++; details.push('Court name "' + n + '" (GP=' + stats[n].gp + ') NOT in player roster — typo or missing player?'); }
+      // Skip walkover artifacts and concatenated pair names
+      if (n === 'W' || n === 'O' || n.indexOf('/') !== -1) return;
+      if (!rosterNorm.has(norm(n))) { divIssues++; details.push('Court name "' + n + '" (GP=' + stats[n].gp + ') NOT in player roster — typo or missing player?'); }
     });
     const status = divIssues === 0
       ? '<span style="color:var(--green);font-weight:600">✓ All clear</span>'
@@ -2048,10 +2327,18 @@ function adminRunIntegrityCheck() {
     issues += divIssues;
   }
 
-  checkDiv('Division I', DIV_I_PLAYERS, DIV_I_SCHEDULE, DIV_I_PARTNERS);
+  // All 11 divisions A-K
+  if (typeof DIV_A_PLAYERS !== 'undefined') checkDiv('Division A', DIV_A_PLAYERS, DIV_A_SCHEDULE, null);
+  if (typeof DIV_B_PLAYERS !== 'undefined') checkDiv('Division B', DIV_B_PLAYERS, DIV_B_SCHEDULE, null);
   checkDiv('Division C', DIV_C_PLAYERS, DIV_C_SCHEDULE, DIV_C_PARTNERS);
+  if (typeof DIV_D_PLAYERS !== 'undefined') checkDiv('Division D', DIV_D_PLAYERS, DIV_D_SCHEDULE, null);
+  if (typeof DIV_E_PLAYERS !== 'undefined') checkDiv('Division E', DIV_E_PLAYERS, DIV_E_SCHEDULE, null);
   checkDiv('Division F', DIV_F_PLAYERS, DIV_F_SCHEDULE, DIV_F_PARTNERS);
+  if (typeof DIV_G_PLAYERS !== 'undefined') checkDiv('Division G', DIV_G_PLAYERS, DIV_G_SCHEDULE, null);
   if (typeof DIV_H_PLAYERS !== 'undefined') checkDiv('Division H', DIV_H_PLAYERS, DIV_H_SCHEDULE, typeof DIV_H_PARTNERS !== 'undefined' ? DIV_H_PARTNERS : null);
+  checkDiv('Division I', DIV_I_PLAYERS, DIV_I_SCHEDULE, DIV_I_PARTNERS);
+  if (typeof DIV_J_PLAYERS !== 'undefined') checkDiv('Division J', DIV_J_PLAYERS, DIV_J_SCHEDULE, null);
+  if (typeof DIV_K_PLAYERS !== 'undefined') checkDiv('Division K', DIV_K_PLAYERS, DIV_K_SCHEDULE, null);
 
   const overall = issues === 0
     ? '<div style="padding:10px;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;color:var(--green);font-weight:600;margin-bottom:10px">✓ All data consistent — 0 issues found</div>'
@@ -2388,19 +2675,54 @@ function adminStopLoad() {
 function renderSeasonSummary() {
   const el = document.getElementById('season-summary');
   if (!el) return;
-  function divSummary(label, standings, schedule) {
-    const totalPts = standings.reduce((s, t) => s + t.pts, 0);
-    const completedWks = schedule.filter(w => w.done).length;
-    const totalMatches = schedule.filter(w => w.done).reduce((s, w) => s + (w.matches ? w.matches.filter(m => !m.rest).length : 0), 0);
-    const leader = standings[0];
-    return `<strong>${label}:</strong> ${standings.length} teams · ${completedWks}/11 weeks · ${totalMatches} matches · ${totalPts} total pts · Leader: ${leader.full} (${leader.pts} pts)`;
-  }
-  el.innerHTML = [
-    divSummary('Div I', DIV_I_STANDINGS, DIV_I_SCHEDULE),
-    divSummary('Div C', DIV_C_STANDINGS, DIV_C_SCHEDULE),
-    divSummary('Div F', DIV_F_STANDINGS, DIV_F_SCHEDULE),
-    typeof DIV_H_STANDINGS !== 'undefined' ? divSummary('Div H', DIV_H_STANDINGS, DIV_H_SCHEDULE) : '',
-  ].filter(Boolean).join('<br>');
+  const divs = _getAllDivisions();
+  const lines = divs.map(d => {
+    const totalPts = d.standings.reduce((s, t) => s + t.pts, 0);
+    const completedWks = d.schedule.filter(w => w.done).length;
+    const totalMatches = d.schedule.filter(w => w.done).reduce((s, w) => s + (w.matches ? w.matches.filter(m => !m.rest).length : 0), 0);
+    const leader = d.standings[0];
+    return `<strong>Div ${d.letter}:</strong> ${d.standings.length} teams · ${completedWks}/${d.schedule.length} weeks · ${totalMatches} matches · ${totalPts} total pts · Leader: ${leader.full} (${leader.pts} pts)`;
+  });
+  // Totals row
+  let totT=0, totP=0, totM=0;
+  divs.forEach(d => {
+    totT += d.teams.length;
+    totP += d.players.length;
+    d.schedule.forEach(wk => { if (wk.matches) wk.matches.forEach(m => { if (!m.rest && m.score) totM++; }); });
+  });
+  lines.push(`<strong style="color:var(--accent2)">TOTAL:</strong> ${divs.length} divisions · ${totT} teams · ${totP} players · ${totM} matches`);
+  el.innerHTML = lines.join('<br>');
+}
+
+function renderSettingsStats() {
+  const el = document.getElementById('settings-stats');
+  if (!el) return;
+  const divs = _getAllDivisions();
+  let totT=0, totP=0, totM=0, totC=0;
+  let maxWk = 0;
+  divs.forEach(d => {
+    totT += d.teams.length;
+    totP += d.players.length;
+    if (d.schedule.length > maxWk) maxWk = d.schedule.length;
+    d.schedule.forEach(wk => {
+      if (!wk.matches) return;
+      wk.matches.forEach(m => {
+        if (m.rest || !m.score) return;
+        totM++;
+        if (m.courts) totC += m.courts.length;
+      });
+    });
+  });
+  // Build per-division weeks note (A-I = 11, J = 9, K = 7)
+  const wkNote = divs.map(d => 'Div ' + d.letter + ':' + d.schedule.length).join(', ');
+  el.innerHTML =
+    '<strong>Divisions:</strong> ' + divs.length + ' (A through K)<br>' +
+    '<strong>Teams:</strong> ' + totT + '<br>' +
+    '<strong>Players:</strong> ' + totP + '<br>' +
+    '<strong>Weeks per Division:</strong> ' + maxWk + ' max <span style="font-size:.7rem">(' + wkNote + ')</span><br>' +
+    '<strong>Matches Played:</strong> ' + totM + '<br>' +
+    '<strong>Courts Played:</strong> ' + totC + '<br>' +
+    '<strong>Source:</strong> league.cdta.co.in';
 }
 
 function renderStorageInfo() {
@@ -2419,42 +2741,37 @@ function adminExportExcel(type) {
   let csv = '';
   const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
 
+  const allDivs = _getAllDivisions();
   if (type === 'standings') {
     csv = 'Division,Rank,Team,Points,Played,Sets Won,Sets Lost,Games Won,Games Lost\n';
-    function addS(label, standings) {
-      standings.forEach(t => { csv += [label,t.rank,esc(t.full),t.pts,t.played,t.setsW,t.setsL,t.gamesW,t.gamesL].join(',') + '\n'; });
-    }
-    addS('I', DIV_I_STANDINGS); addS('C', DIV_C_STANDINGS); addS('F', DIV_F_STANDINGS);
-    if (typeof DIV_H_STANDINGS !== 'undefined') addS('H', DIV_H_STANDINGS);
+    allDivs.forEach(d => {
+      d.standings.forEach(t => { csv += [d.letter,t.rank,esc(t.full),t.pts,t.played,t.setsW,t.setsL,t.gamesW,t.gamesL].join(',') + '\n'; });
+    });
   } else if (type === 'players') {
     csv = 'Division,Team,Name,Gender,Age,Role,Played,Wins,Win%\n';
-    function addP(label, players) {
-      players.forEach(p => {
+    allDivs.forEach(d => {
+      d.players.forEach(p => {
         const pct = p.gamesPlayed > 0 ? Math.round((p.wins / p.gamesPlayed) * 100) : '';
-        csv += [label,esc(p.team),esc(p.name),p.gender||'',p.age||'',p.role,p.gamesPlayed??'',p.wins??'',pct].join(',') + '\n';
+        csv += [d.letter,esc(p.team),esc(p.name),p.gender||'',p.age||'',p.role,p.gamesPlayed??'',p.wins??'',pct].join(',') + '\n';
       });
-    }
-    addP('I', DIV_I_PLAYERS); addP('C', DIV_C_PLAYERS); addP('F', DIV_F_PLAYERS);
-    if (typeof DIV_H_PLAYERS !== 'undefined') addP('H', DIV_H_PLAYERS);
+    });
   } else if (type === 'results') {
     csv = 'Division,Week,Date,Home,Score,Away,Venue,Court,Home Pair,Away Pair,Sets,Winner\n';
-    function addR(label, schedule) {
-      schedule.forEach(wk => {
+    allDivs.forEach(d => {
+      d.schedule.forEach(wk => {
         if (!wk.matches) return;
         wk.matches.forEach(m => {
           if (m.rest) return;
           if (!m.courts || m.courts.length === 0) {
-            csv += [label,wk.week,esc(wk.date),esc(m.home),m.score||'TBD',esc(m.away),esc(m.venue),'','','','',''].join(',') + '\n';
+            csv += [d.letter,wk.week,esc(wk.date),esc(m.home),m.score||'TBD',esc(m.away),esc(m.venue),'','','','',''].join(',') + '\n';
           } else {
             m.courts.forEach(ct => {
-              csv += [label,wk.week,esc(wk.date),esc(m.home),m.score,esc(m.away),esc(m.venue),ct.ct,esc(ct.home),esc(ct.away),esc(ct.sets),ct.win].join(',') + '\n';
+              csv += [d.letter,wk.week,esc(wk.date),esc(m.home),m.score,esc(m.away),esc(m.venue),ct.ct,esc(ct.home),esc(ct.away),esc(ct.sets),ct.win].join(',') + '\n';
             });
           }
         });
       });
-    }
-    addR('I', DIV_I_SCHEDULE); addR('C', DIV_C_SCHEDULE); addR('F', DIV_F_SCHEDULE);
-    if (typeof DIV_H_SCHEDULE !== 'undefined') addR('H', DIV_H_SCHEDULE);
+    });
   }
 
   // Download as CSV file
@@ -2667,10 +2984,11 @@ function renderDivFProjBreakdown() {
     const pb = b.current + b.fixtures.reduce((s,f) => s+f.projPts, 0);
     return pb - pa;
   }).map(team => {
-    const totalProj = team.current + team.fixtures.reduce((s,f) => s + f.projPts, 0);
-    const totalMax  = team.current + team.fixtures.reduce((s,f) => s + f.max, 0);
+    const pending = team.fixtures.filter(f => f.actual === undefined);
+    const totalProj = team.current + pending.reduce((s,f) => s + f.projPts, 0);
+    const totalMax  = team.current + pending.reduce((s,f) => s + f.max, 0);
     const isAces = team.short === 'ACES';
-    const rows = team.fixtures.map(f => {
+    const rows = pending.map(f => {
       const pctProj = Math.round((f.projPts / 3) * 100);
       const venueBadge = `<span style="font-size:.62rem;color:${f.venue==='H'?'var(--green)':'var(--muted)'};background:${f.venue==='H'?'rgba(34,197,94,.1)':'rgba(100,116,139,.1)'};padding:1px 5px;border-radius:3px;margin-right:4px">${f.venue==='H'?'HOME':'AWAY'}</span>`;
       return `<tr>
@@ -2726,10 +3044,12 @@ function renderDivFProjBreakdown() {
 renderStandings();
 renderProjection();
 renderTeams();
+populateScheduleFilter();
 renderSchedule();
 populateResultsFilter();
 renderResults();
 populatePlayerFilters();
+recomputeDivStats(DIV_I_SCHEDULE, DIV_I_PLAYERS, DIV_I_PARTNERS, typeof DIV_I_KEY_PAIRS !== 'undefined' ? DIV_I_KEY_PAIRS : null);
 renderPlayers();
 renderStats();
 renderSvgClub();
@@ -2746,9 +3066,79 @@ renderSvgClub();
     perfBtn.style.fontWeight = '600';
   }
 })();
+
+// Recompute player stats and partners from schedule courts
+function recomputeDivStats(SCHEDULE, PLAYERS, PARTNERS, KEY_PAIRS) {
+  const norm = s => (s||'').toUpperCase().replace(/[.,'’`]/g,' ').replace(/\s+/g,' ').trim();
+  const titleCase = s => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+  const nameMap = {};
+  PLAYERS.forEach(p => { nameMap[norm(p.name)] = p.name; });
+  const stats = {};
+  const pairStats = {};
+  const ensure = n => stats[n] || (stats[n] = { played:0, wins:0, partners:{} });
+  const addPair = (a, b, won) => {
+    if (a > b) { const t=a; a=b; b=t; }
+    const k = a + '|' + b;
+    const ps = pairStats[k] || (pairStats[k] = { apps:0, wins:0 });
+    ps.apps++;
+    if (won) ps.wins++;
+  };
+  SCHEDULE.forEach(wk => {
+    (wk.matches||[]).forEach(m => {
+      (m.courts||[]).forEach(c => {
+        const home = (c.home||'').split('/').map(norm).filter(Boolean);
+        const away = (c.away||'').split('/').map(norm).filter(Boolean);
+        if (home.length === 0 || away.length === 0) return;
+        const homeWin = c.win === 'home';
+        const awayWin = c.win === 'away';
+        home.forEach((p,i) => {
+          const s = ensure(p); s.played++; if (homeWin) s.wins++;
+          home.forEach((o,j) => { if (i!==j) s.partners[o] = (s.partners[o]||0)+1; });
+        });
+        away.forEach((p,i) => {
+          const s = ensure(p); s.played++; if (awayWin) s.wins++;
+          away.forEach((o,j) => { if (i!==j) s.partners[o] = (s.partners[o]||0)+1; });
+        });
+        if (home.length >= 2) addPair(home[0], home[1], homeWin);
+        if (away.length >= 2) addPair(away[0], away[1], awayWin);
+      });
+    });
+  });
+  if (KEY_PAIRS) {
+    KEY_PAIRS.forEach(kp => {
+      const parts = (kp.pair||'').split('/').map(norm).filter(Boolean);
+      if (parts.length === 2) {
+        let [a,b] = parts;
+        if (a > b) { const t=a; a=b; b=t; }
+        const ps = pairStats[a + '|' + b];
+        if (ps) { kp.apps = ps.apps; kp.wins = ps.wins; }
+        else { kp.wins = 0; }
+      }
+    });
+  }
+  PLAYERS.forEach(p => {
+    const s = stats[norm(p.name)];
+    p.gamesPlayed = s ? s.played : 0;
+    p.wins = s ? s.wins : 0;
+  });
+  if (PARTNERS) {
+    Object.keys(PARTNERS).forEach(k => delete PARTNERS[k]);
+    PLAYERS.forEach(p => {
+      const s = stats[norm(p.name)];
+      if (s && Object.keys(s.partners).length > 0) {
+        PARTNERS[p.name] = Object.entries(s.partners)
+          .sort((a,b) => b[1]-a[1])
+          .map(([n,c]) => [nameMap[n] || titleCase(n), c]);
+      }
+    });
+  }
+}
+
+recomputeDivStats(DIV_C_SCHEDULE, DIV_C_PLAYERS, DIV_C_PARTNERS, DIV_C_KEY_PAIRS);
 renderDivCTeams();
 renderDivCStandings();
 renderDivCProjection();
+populateDivCScheduleFilter();
 renderDivCSchedule();
 populateDivCResultsFilter();
 renderDivCResults();
@@ -2764,11 +3154,14 @@ function renderDivFStandings() {
   const total = DIV_F_STANDINGS.length;
   tb.innerHTML = DIV_F_STANDINGS.map(s => {
     const isAces = s.short === 'ACES';
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
     return `<tr${_standingRowClass(s.rank, total)}>
       <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
       <td><span class="team-badge">${s.short}</span> ${s.full}${isAces?' <span style="font-size:.62rem;color:var(--accent);background:rgba(184,122,16,.15);padding:2px 7px;border-radius:3px;margin-left:4px">SVG CLUB</span>':''}</td>
-      <td class="pts-cell">${s.pts}</td>
-      <td>${s.played}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+      <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
       <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
       <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
       <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
@@ -2824,12 +3217,33 @@ function renderDivFTeams() {
   }).join('');
 }
 
+function populateDivFScheduleFilter() {
+  const weekSel = document.getElementById('divf-schedule-week-filter');
+  const teamSel = document.getElementById('divf-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_F_SCHEDULE.forEach(wk => {
+    const opt = document.createElement('option');
+    opt.value = wk.week; opt.textContent = 'Week ' + wk.week;
+    weekSel.appendChild(opt);
+  });
+  [...DIV_F_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.full; opt.textContent = t.full;
+    teamSel.appendChild(opt);
+  });
+}
+
 function renderDivFSchedule() {
+  const filterWeek = parseInt(document.getElementById('divf-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divf-schedule-team-filter')?.value || '';
   const c = document.getElementById('divf-schedule-container');
   if (!c) return;
-  c.innerHTML = SCHEDULE_COL_HEADER + DIV_F_SCHEDULE.map(wk => {
+  const filtered = DIV_F_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
     const upcomingBadge = !wk.done ? `<span class="wk-badge">UPCOMING</span>` : '';
-    const rows = wk.matches.map(m => {
+    const rows = matches.map(m => {
       const scoreCell = m.score
         ? `<div class="match-score">${m.score}</div>`
         : `<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>`;
@@ -2987,26 +3401,15 @@ function renderDivFStats() {
 }
 
 
-function switchToDivF(btn) {
-  document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('nav-divs').style.display='flex';
-  document.getElementById('nav-svg').style.display='none';
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navStandingsBtn = document.querySelector('#nav-divs .nav-btn[onclick*="standings"]');
-  if (navStandingsBtn) navStandingsBtn.classList.add('active');
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-divf-standings').classList.add('active');
-  _savePageState('f', 'standings');
-  if (typeof _logUsage === 'function') _logUsage('page', 'standings');
-  window.scrollTo(0,0);
-}
+function switchToDivF(btn) { switchToDiv('F', btn); }
 
 // ─── DIVISION F INIT ──────────────────────────────────────────────────────────
+recomputeDivStats(DIV_F_SCHEDULE, DIV_F_PLAYERS, DIV_F_PARTNERS, typeof DIV_F_KEY_PAIRS !== 'undefined' ? DIV_F_KEY_PAIRS : null);
 renderDivFTeams();
 renderDivFStandings();
 renderDivFProjection();
 renderDivFProjBreakdown();
+populateDivFScheduleFilter();
 renderDivFSchedule();
 populateDivFResultsFilter();
 renderDivFResults();
@@ -3016,35 +3419,27 @@ populateDivFPlayerFilter();
 
 // ─── DIVISION H ─────────────────────────────────────────────────────────────
 
-function switchToDivH(btn) {
-  document.querySelectorAll('.div-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('nav-divs').style.display='flex';
-  document.getElementById('nav-svg').style.display='none';
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const navStandingsBtn = document.querySelector('#nav-divs .nav-btn[onclick*="standings"]');
-  if (navStandingsBtn) navStandingsBtn.classList.add('active');
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-divh-standings').classList.add('active');
-  _savePageState('h', 'standings');
-  if (typeof _logUsage === 'function') _logUsage('page', 'standings');
-  window.scrollTo(0,0);
-}
+function switchToDivH(btn) { switchToDiv('H', btn); }
 
 function renderDivHStandings() {
   const tb = document.getElementById('tbody-divh-standings');
   if (!tb) return;
   const total = DIV_H_STANDINGS.length;
-  tb.innerHTML = DIV_H_STANDINGS.map(s => `<tr${_standingRowClass(s.rank, total)}>
+  tb.innerHTML = DIV_H_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
     <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
     <td><span class="team-badge">${s.short}</span> ${s.full}</td>
-    <td class="pts-cell">${s.pts}</td>
-    <td>${s.played}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
     <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
     <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
     <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
     <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
   // Set player count
   const el = document.getElementById('divh-player-total');
   if (el) el.textContent = DIV_H_PLAYERS.length;
@@ -3086,12 +3481,33 @@ function renderDivHTeams() {
   }).join('');
 }
 
+function populateDivHScheduleFilter() {
+  const weekSel = document.getElementById('divh-schedule-week-filter');
+  const teamSel = document.getElementById('divh-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_H_SCHEDULE.forEach(wk => {
+    const opt = document.createElement('option');
+    opt.value = wk.week; opt.textContent = 'Week ' + wk.week;
+    weekSel.appendChild(opt);
+  });
+  [...DIV_H_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.full; opt.textContent = t.full;
+    teamSel.appendChild(opt);
+  });
+}
+
 function renderDivHSchedule() {
+  const filterWeek = parseInt(document.getElementById('divh-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divh-schedule-team-filter')?.value || '';
   const c = document.getElementById('divh-schedule-container');
   if (!c) return;
-  c.innerHTML = SCHEDULE_COL_HEADER + DIV_H_SCHEDULE.map(wk => {
+  const filtered = DIV_H_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
     const upcomingBadge = !wk.done ? `<span class="wk-badge">UPCOMING</span>` : '';
-    const rows = wk.matches.map(m => {
+    const rows = matches.map(m => {
       const scoreCell = m.score && m.score !== 'TBD'
         ? `<div class="match-score">${m.score}</div>`
         : `<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>`;
@@ -3246,9 +3662,11 @@ function renderDivHStats() {
 }
 
 // ─── DIVISION H INIT ──────────────────────────────────────────────────────────
+recomputeDivStats(DIV_H_SCHEDULE, DIV_H_PLAYERS, DIV_H_PARTNERS);
 renderDivHTeams();
 renderDivHStandings();
 renderDivHProjection();
+populateDivHScheduleFilter();
 renderDivHSchedule();
 populateDivHResultsFilter();
 renderDivHResults();
@@ -3258,30 +3676,986 @@ populateDivHPlayerFilter();
 
 checkAuth();
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION A RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivAStandings() {
+  const tb = document.getElementById('tbody-diva-standings');
+  if (!tb) return;
+  const total = DIV_A_STANDINGS.length;
+  tb.innerHTML = DIV_A_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('diva-player-total');
+  if (el) el.textContent = DIV_A_PLAYERS.length;
+}
+
+function renderDivATeams() {
+  const tb = document.getElementById('tbody-diva-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_A_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><strong>${t.full}</strong></td>
+    <td><span class="team-badge">${t.short}</span></td>
+    <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+    <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+    <td>${t.players}</td>
+  </tr>`).join('');
+}
+
+function populateDivAScheduleFilter() {
+  const weekSel = document.getElementById('diva-schedule-week-filter');
+  const teamSel = document.getElementById('diva-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_A_SCHEDULE.forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; weekSel.appendChild(o); });
+  [...DIV_A_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; teamSel.appendChild(o); });
+}
+
+function renderDivASchedule() {
+  const filterWeek = parseInt(document.getElementById('diva-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('diva-schedule-team-filter')?.value || '';
+  const c = document.getElementById('diva-schedule-container');
+  if (!c) return;
+  const filtered = DIV_A_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? '<span class="wk-badge">UPCOMING</span>' : '';
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${matches.map(m => {
+      const sc = m.score ? `<div class="match-score">${m.score}</div>` : '<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>';
+      return `<div class="match-row"><div class="match-home">${m.home}</div>${sc}<div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function populateDivAResultsFilter() {
+  const wSel = document.getElementById('diva-results-week-filter');
+  const tSel = document.getElementById('diva-results-team-filter');
+  if (!wSel || !tSel) return;
+  DIV_A_SCHEDULE.filter(w => w.done).forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; wSel.appendChild(o); });
+  [...DIV_A_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; tSel.appendChild(o); });
+}
+
+function renderDivAResults() {
+  const filterTeam = document.getElementById('diva-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('diva-results-week-filter').value) || null;
+  const c = document.getElementById('diva-results-container');
+  if (!c) return;
+  const played = DIV_A_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+      if (m.courts) m.courts.forEach(ct => {
+        const hw = ct.win==='home', aw = ct.win==='away';
+        html += `<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">
+          <div style="${hw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.home}</div>
+          <div style="text-align:center"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct${ct.ct}</span>
+          <span style="font-family:'DM Mono',monospace;color:${hw?'#22c55e':aw?'#ef4444':'#64748b'}">${ct.sets}</span></div>
+          <div style="${aw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.away}</div></div>`;
+      });
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivAPlayerFilter() {
+  const sel = document.getElementById('diva-player-team-filter');
+  if (!sel) return;
+  [...DIV_A_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.short; o.textContent = t.full; sel.appendChild(o); });
+}
+
+function renderDivAPlayers() {
+  const search = (document.getElementById('diva-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('diva-player-team-filter')?.value || '';
+  let filtered = DIV_A_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-diva-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr><td>${photoHtml}${p.name}${capTag}</td><td><span class="team-badge">${p.team}</span></td><td style="font-size:.78rem;color:var(--muted)">${p.role}</td></tr>`;
+  }).join('');
+  document.getElementById('diva-player-count').textContent = `Showing ${filtered.length} of ${DIV_A_PLAYERS.length} players`;
+}
+
+// ── DIVISION A INIT ──
+renderDivAStandings();
+renderDivATeams();
+populateDivAScheduleFilter();
+renderDivASchedule();
+populateDivAResultsFilter();
+renderDivAResults();
+populateDivAPlayerFilter();
+renderDivAPlayers();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION B RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivBStandings() {
+  const tb = document.getElementById('tbody-divb-standings');
+  if (!tb) return;
+  const total = DIV_B_STANDINGS.length;
+  tb.innerHTML = DIV_B_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('divb-player-total');
+  if (el) el.textContent = DIV_B_PLAYERS.length;
+}
+
+function renderDivBTeams() {
+  const tb = document.getElementById('tbody-divb-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_B_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><strong>${t.full}</strong></td>
+    <td><span class="team-badge">${t.short}</span></td>
+    <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+    <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+    <td>${t.players}</td>
+  </tr>`).join('');
+}
+
+function populateDivBScheduleFilter() {
+  const weekSel = document.getElementById('divb-schedule-week-filter');
+  const teamSel = document.getElementById('divb-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_B_SCHEDULE.forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; weekSel.appendChild(o); });
+  [...DIV_B_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; teamSel.appendChild(o); });
+}
+
+function renderDivBSchedule() {
+  const filterWeek = parseInt(document.getElementById('divb-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divb-schedule-team-filter')?.value || '';
+  const c = document.getElementById('divb-schedule-container');
+  if (!c) return;
+  const filtered = DIV_B_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? '<span class="wk-badge">UPCOMING</span>' : '';
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${matches.map(m => {
+      const sc = m.score ? `<div class="match-score">${m.score}</div>` : '<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>';
+      return `<div class="match-row"><div class="match-home">${m.home}</div>${sc}<div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function populateDivBResultsFilter() {
+  const wSel = document.getElementById('divb-results-week-filter');
+  const tSel = document.getElementById('divb-results-team-filter');
+  if (!wSel || !tSel) return;
+  DIV_B_SCHEDULE.filter(w => w.done).forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; wSel.appendChild(o); });
+  [...DIV_B_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; tSel.appendChild(o); });
+}
+
+function renderDivBResults() {
+  const filterTeam = document.getElementById('divb-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('divb-results-week-filter').value) || null;
+  const c = document.getElementById('divb-results-container');
+  if (!c) return;
+  const played = DIV_B_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+      if (m.courts) m.courts.forEach(ct => {
+        const hw = ct.win==='home', aw = ct.win==='away';
+        html += `<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">
+          <div style="${hw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.home}</div>
+          <div style="text-align:center"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct${ct.ct}</span>
+          <span style="font-family:'DM Mono',monospace;color:${hw?'#22c55e':aw?'#ef4444':'#64748b'}">${ct.sets}</span></div>
+          <div style="${aw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.away}</div></div>`;
+      });
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivBPlayerFilter() {
+  const sel = document.getElementById('divb-player-team-filter');
+  if (!sel) return;
+  [...DIV_B_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.short; o.textContent = t.full; sel.appendChild(o); });
+}
+
+function renderDivBPlayers() {
+  const search = (document.getElementById('divb-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('divb-player-team-filter')?.value || '';
+  let filtered = DIV_B_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-divb-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr><td>${photoHtml}${p.name}${capTag}</td><td><span class="team-badge">${p.team}</span></td><td style="font-size:.78rem;color:var(--muted)">${p.role}</td></tr>`;
+  }).join('');
+  document.getElementById('divb-player-count').textContent = `Showing ${filtered.length} of ${DIV_B_PLAYERS.length} players`;
+}
+
+// ── DIVISION B INIT ──
+renderDivBStandings();
+renderDivBTeams();
+populateDivBScheduleFilter();
+renderDivBSchedule();
+populateDivBResultsFilter();
+renderDivBResults();
+populateDivBPlayerFilter();
+renderDivBPlayers();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION D RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivDStandings() {
+  const tb = document.getElementById('tbody-divd-standings');
+  if (!tb) return;
+  const total = DIV_D_STANDINGS.length;
+  tb.innerHTML = DIV_D_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('divd-player-total');
+  if (el) el.textContent = DIV_D_PLAYERS.length;
+}
+
+function renderDivDTeams() {
+  const tb = document.getElementById('tbody-divd-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_D_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><strong>${t.full}</strong></td>
+    <td><span class="team-badge">${t.short}</span></td>
+    <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+    <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+    <td>${t.players}</td>
+  </tr>`).join('');
+}
+
+function populateDivDScheduleFilter() {
+  const weekSel = document.getElementById('divd-schedule-week-filter');
+  const teamSel = document.getElementById('divd-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_D_SCHEDULE.forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; weekSel.appendChild(o); });
+  [...DIV_D_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; teamSel.appendChild(o); });
+}
+
+function renderDivDSchedule() {
+  const filterWeek = parseInt(document.getElementById('divd-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divd-schedule-team-filter')?.value || '';
+  const c = document.getElementById('divd-schedule-container');
+  if (!c) return;
+  const filtered = DIV_D_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? '<span class="wk-badge">UPCOMING</span>' : '';
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${matches.map(m => {
+      const sc = m.score ? `<div class="match-score">${m.score}</div>` : '<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>';
+      return `<div class="match-row"><div class="match-home">${m.home}</div>${sc}<div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function populateDivDResultsFilter() {
+  const wSel = document.getElementById('divd-results-week-filter');
+  const tSel = document.getElementById('divd-results-team-filter');
+  if (!wSel || !tSel) return;
+  DIV_D_SCHEDULE.filter(w => w.done).forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; wSel.appendChild(o); });
+  [...DIV_D_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; tSel.appendChild(o); });
+}
+
+function renderDivDResults() {
+  const filterTeam = document.getElementById('divd-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('divd-results-week-filter').value) || null;
+  const c = document.getElementById('divd-results-container');
+  if (!c) return;
+  const played = DIV_D_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+      if (m.courts) m.courts.forEach(ct => {
+        const hw = ct.win==='home', aw = ct.win==='away';
+        html += `<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">
+          <div style="${hw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.home}</div>
+          <div style="text-align:center"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct${ct.ct}</span>
+          <span style="font-family:'DM Mono',monospace;color:${hw?'#22c55e':aw?'#ef4444':'#64748b'}">${ct.sets}</span></div>
+          <div style="${aw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.away}</div></div>`;
+      });
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivDPlayerFilter() {
+  const sel = document.getElementById('divd-player-team-filter');
+  if (!sel) return;
+  [...DIV_D_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.short; o.textContent = t.full; sel.appendChild(o); });
+}
+
+function renderDivDPlayers() {
+  const search = (document.getElementById('divd-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('divd-player-team-filter')?.value || '';
+  let filtered = DIV_D_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-divd-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr><td>${photoHtml}${p.name}${capTag}</td><td><span class="team-badge">${p.team}</span></td><td style="font-size:.78rem;color:var(--muted)">${p.role}</td></tr>`;
+  }).join('');
+  document.getElementById('divd-player-count').textContent = `Showing ${filtered.length} of ${DIV_D_PLAYERS.length} players`;
+}
+
+// ── DIVISION D INIT ──
+renderDivDStandings();
+renderDivDTeams();
+populateDivDScheduleFilter();
+renderDivDSchedule();
+populateDivDResultsFilter();
+renderDivDResults();
+populateDivDPlayerFilter();
+renderDivDPlayers();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION E RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivEStandings() {
+  const tb = document.getElementById('tbody-dive-standings');
+  if (!tb) return;
+  const total = DIV_E_STANDINGS.length;
+  tb.innerHTML = DIV_E_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('dive-player-total');
+  if (el) el.textContent = DIV_E_PLAYERS.length;
+}
+
+function renderDivETeams() {
+  const tb = document.getElementById('tbody-dive-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_E_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><strong>${t.full}</strong></td>
+    <td><span class="team-badge">${t.short}</span></td>
+    <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+    <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+    <td>${t.players}</td>
+  </tr>`).join('');
+}
+
+function populateDivEScheduleFilter() {
+  const weekSel = document.getElementById('dive-schedule-week-filter');
+  const teamSel = document.getElementById('dive-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_E_SCHEDULE.forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; weekSel.appendChild(o); });
+  [...DIV_E_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; teamSel.appendChild(o); });
+}
+
+function renderDivESchedule() {
+  const filterWeek = parseInt(document.getElementById('dive-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('dive-schedule-team-filter')?.value || '';
+  const c = document.getElementById('dive-schedule-container');
+  if (!c) return;
+  const filtered = DIV_E_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? '<span class="wk-badge">UPCOMING</span>' : '';
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${matches.map(m => {
+      const sc = m.score ? `<div class="match-score">${m.score}</div>` : '<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>';
+      return `<div class="match-row"><div class="match-home">${m.home}</div>${sc}<div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function populateDivEResultsFilter() {
+  const wSel = document.getElementById('dive-results-week-filter');
+  const tSel = document.getElementById('dive-results-team-filter');
+  if (!wSel || !tSel) return;
+  DIV_E_SCHEDULE.filter(w => w.done).forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; wSel.appendChild(o); });
+  [...DIV_E_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; tSel.appendChild(o); });
+}
+
+function renderDivEResults() {
+  const filterTeam = document.getElementById('dive-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('dive-results-week-filter').value) || null;
+  const c = document.getElementById('dive-results-container');
+  if (!c) return;
+  const played = DIV_E_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+      if (m.courts) m.courts.forEach(ct => {
+        const hw = ct.win==='home', aw = ct.win==='away';
+        html += `<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">
+          <div style="${hw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.home}</div>
+          <div style="text-align:center"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct${ct.ct}</span>
+          <span style="font-family:'DM Mono',monospace;color:${hw?'#22c55e':aw?'#ef4444':'#64748b'}">${ct.sets}</span></div>
+          <div style="${aw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.away}</div></div>`;
+      });
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivEPlayerFilter() {
+  const sel = document.getElementById('dive-player-team-filter');
+  if (!sel) return;
+  [...DIV_E_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.short; o.textContent = t.full; sel.appendChild(o); });
+}
+
+function renderDivEPlayers() {
+  const search = (document.getElementById('dive-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('dive-player-team-filter')?.value || '';
+  let filtered = DIV_E_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-dive-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr><td>${photoHtml}${p.name}${capTag}</td><td><span class="team-badge">${p.team}</span></td><td style="font-size:.78rem;color:var(--muted)">${p.role}</td></tr>`;
+  }).join('');
+  document.getElementById('dive-player-count').textContent = `Showing ${filtered.length} of ${DIV_E_PLAYERS.length} players`;
+}
+
+// ── DIVISION E INIT ──
+renderDivEStandings();
+renderDivETeams();
+populateDivEScheduleFilter();
+renderDivESchedule();
+populateDivEResultsFilter();
+renderDivEResults();
+populateDivEPlayerFilter();
+renderDivEPlayers();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION G RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivGStandings() {
+  const tb = document.getElementById('tbody-divg-standings');
+  if (!tb) return;
+  const total = DIV_G_STANDINGS.length;
+  tb.innerHTML = DIV_G_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('divg-player-total');
+  if (el) el.textContent = DIV_G_PLAYERS.length;
+}
+
+function renderDivGTeams() {
+  const tb = document.getElementById('tbody-divg-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_G_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><strong>${t.full}</strong></td>
+    <td><span class="team-badge">${t.short}</span></td>
+    <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+    <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+    <td>${t.players}</td>
+  </tr>`).join('');
+}
+
+function populateDivGScheduleFilter() {
+  const weekSel = document.getElementById('divg-schedule-week-filter');
+  const teamSel = document.getElementById('divg-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_G_SCHEDULE.forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; weekSel.appendChild(o); });
+  [...DIV_G_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; teamSel.appendChild(o); });
+}
+
+function renderDivGSchedule() {
+  const filterWeek = parseInt(document.getElementById('divg-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divg-schedule-team-filter')?.value || '';
+  const c = document.getElementById('divg-schedule-container');
+  if (!c) return;
+  const filtered = DIV_G_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? '<span class="wk-badge">UPCOMING</span>' : '';
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${matches.map(m => {
+      const sc = m.score ? `<div class="match-score">${m.score}</div>` : '<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>';
+      return `<div class="match-row"><div class="match-home">${m.home}</div>${sc}<div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function populateDivGResultsFilter() {
+  const wSel = document.getElementById('divg-results-week-filter');
+  const tSel = document.getElementById('divg-results-team-filter');
+  if (!wSel || !tSel) return;
+  DIV_G_SCHEDULE.filter(w => w.done).forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; wSel.appendChild(o); });
+  [...DIV_G_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; tSel.appendChild(o); });
+}
+
+function renderDivGResults() {
+  const filterTeam = document.getElementById('divg-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('divg-results-week-filter').value) || null;
+  const c = document.getElementById('divg-results-container');
+  if (!c) return;
+  const played = DIV_G_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue||''}</div></div>`;
+      if (m.courts) m.courts.forEach(ct => {
+        const hw = ct.win==='home', aw = ct.win==='away';
+        html += `<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">
+          <div style="${hw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.home}</div>
+          <div style="text-align:center"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct${ct.ct}</span>
+          <span style="font-family:'DM Mono',monospace;color:${hw?'#22c55e':aw?'#ef4444':'#64748b'}">${ct.sets}</span></div>
+          <div style="${aw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.away}</div></div>`;
+      });
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivGPlayerFilter() {
+  const sel = document.getElementById('divg-player-team-filter');
+  if (!sel) return;
+  [...DIV_G_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.short; o.textContent = t.full; sel.appendChild(o); });
+}
+
+function renderDivGPlayers() {
+  const search = (document.getElementById('divg-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('divg-player-team-filter')?.value || '';
+  let filtered = DIV_G_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-divg-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr><td>${photoHtml}${p.name}${capTag}</td><td><span class="team-badge">${p.team}</span></td><td style="font-size:.78rem;color:var(--muted)">${p.role}</td></tr>`;
+  }).join('');
+  document.getElementById('divg-player-count').textContent = `Showing ${filtered.length} of ${DIV_G_PLAYERS.length} players`;
+}
+
+// ── DIVISION G INIT ──
+renderDivGStandings();
+renderDivGTeams();
+populateDivGScheduleFilter();
+renderDivGSchedule();
+populateDivGResultsFilter();
+renderDivGResults();
+populateDivGPlayerFilter();
+renderDivGPlayers();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION J RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivJStandings() {
+  const tb = document.getElementById('tbody-divj-standings');
+  if (!tb) return;
+  const total = DIV_J_STANDINGS.length;
+  tb.innerHTML = DIV_J_STANDINGS.map(s => {
+    const playedPts = s.played;
+    const matches = Math.floor(s.played / 3);
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('divj-player-total');
+  if (el) el.textContent = DIV_J_PLAYERS.length;
+}
+
+function renderDivJTeams() {
+  const tb = document.getElementById('tbody-divj-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_J_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => `<tr>
+    <td class="rank-cell">${i+1}</td>
+    <td><strong>${t.full}</strong></td>
+    <td><span class="team-badge">${t.short}</span></td>
+    <td>${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+    <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+    <td>${t.players}</td>
+  </tr>`).join('');
+}
+
+function populateDivJScheduleFilter() {
+  const weekSel = document.getElementById('divj-schedule-week-filter');
+  const teamSel = document.getElementById('divj-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_J_SCHEDULE.forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; weekSel.appendChild(o); });
+  [...DIV_J_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; teamSel.appendChild(o); });
+}
+
+function renderDivJSchedule() {
+  const filterWeek = parseInt(document.getElementById('divj-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divj-schedule-team-filter')?.value || '';
+  const c = document.getElementById('divj-schedule-container');
+  if (!c) return;
+  const filtered = DIV_J_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? '<span class="wk-badge">UPCOMING</span>' : '';
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${matches.map(m => {
+      const sc = m.score ? `<div class="match-score">${m.score}</div>` : '<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>';
+      return `<div class="match-row"><div class="match-home">${m.home}</div>${sc}<div class="match-away">${m.away}</div><div class="match-venue">${m.venue}</div></div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+
+function populateDivJResultsFilter() {
+  const wSel = document.getElementById('divj-results-week-filter');
+  const tSel = document.getElementById('divj-results-team-filter');
+  if (!wSel || !tSel) return;
+  DIV_J_SCHEDULE.filter(w => w.done).forEach(wk => { const o = document.createElement('option'); o.value = wk.week; o.textContent = 'Week ' + wk.week; wSel.appendChild(o); });
+  [...DIV_J_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.full; o.textContent = t.full; tSel.appendChild(o); });
+}
+
+function renderDivJResults() {
+  const filterTeam = document.getElementById('divj-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('divj-results-week-filter').value) || null;
+  const c = document.getElementById('divj-results-container');
+  if (!c) return;
+  const played = DIV_J_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue}</div></div>`;
+      if (m.courts) m.courts.forEach(ct => {
+        const hw = ct.win==='home', aw = ct.win==='away';
+        html += `<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">
+          <div style="${hw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.home}</div>
+          <div style="text-align:center"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct${ct.ct}</span>
+          <span style="font-family:'DM Mono',monospace;color:${hw?'#22c55e':aw?'#ef4444':'#64748b'}">${ct.sets}</span></div>
+          <div style="${aw?'font-weight:600;color:#1e293b':'color:#64748b'}">${ct.away}</div></div>`;
+      });
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivJPlayerFilter() {
+  const sel = document.getElementById('divj-player-team-filter');
+  if (!sel) return;
+  [...DIV_J_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => { const o = document.createElement('option'); o.value = t.short; o.textContent = t.full; sel.appendChild(o); });
+}
+
+function renderDivJPlayers() {
+  const search = (document.getElementById('divj-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('divj-player-team-filter')?.value || '';
+  let filtered = DIV_J_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-divj-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr><td>${photoHtml}${p.name}${capTag}</td><td><span class="team-badge">${p.team}</span></td><td style="font-size:.78rem;color:var(--muted)">${p.role}</td></tr>`;
+  }).join('');
+  document.getElementById('divj-player-count').textContent = `Showing ${filtered.length} of ${DIV_J_PLAYERS.length} players`;
+}
+
+// ── DIVISION J INIT ──
+renderDivJStandings();
+renderDivJTeams();
+populateDivJScheduleFilter();
+renderDivJSchedule();
+populateDivJResultsFilter();
+renderDivJResults();
+populateDivJPlayerFilter();
+renderDivJPlayers();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DIVISION K RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function renderDivKStandings() {
+  const tb = document.getElementById('tbody-divk-standings');
+  if (!tb) return;
+  const total = DIV_K_STANDINGS.length;
+  tb.innerHTML = DIV_K_STANDINGS.map(s => {
+    const matches = s.played;
+    const playedPts = s.played * 3;
+    const ptsPct = playedPts > 0 ? Math.round((s.pts / playedPts) * 100) : 0;
+    return `<tr${_standingRowClass(s.rank, total)}>
+    <td class="rank-cell ${s.rank<=3?'top3':''}">${s.rank} ${_standingIcon(s.rank, total)}</td>
+    <td><span class="team-badge">${s.short}</span> ${s.full}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matches}m)</span></td>
+    <td class="pts-cell">${s.pts} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
+    <td style="font-family:'DM Mono',monospace">${s.setsW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.setsL}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesW}</td>
+    <td style="font-family:'DM Mono',monospace">${s.gamesL}</td>
+  </tr>`;
+  }).join('');
+  const el = document.getElementById('divk-player-total');
+  if (el) el.textContent = DIV_K_PLAYERS.length;
+}
+
+function renderDivKTeams() {
+  const tb = document.getElementById('tbody-divk-teams');
+  if (!tb) return;
+  tb.innerHTML = [...DIV_K_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).map((t,i) => {
+    const capPlayer = DIV_K_PLAYERS.find(p => p.team === t.short && p.role === 'Captain');
+    const capPhoto = capPlayer && capPlayer.photo ? `<img src="${_esc(capPlayer.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    return `<tr>
+      <td class="rank-cell">${i+1}</td>
+      <td><strong>${t.full}</strong></td>
+      <td><span class="team-badge">${t.short}</span></td>
+      <td>${capPhoto}${t.captain} <span class="pill pill-gold" style="margin-left:4px">C</span></td>
+      <td style="color:var(--muted);font-size:.82rem">${t.club}</td>
+      <td>${t.players}</td>
+    </tr>`;
+  }).join('');
+}
+
+function populateDivKScheduleFilter() {
+  const weekSel = document.getElementById('divk-schedule-week-filter');
+  const teamSel = document.getElementById('divk-schedule-team-filter');
+  if (!weekSel || !teamSel) return;
+  DIV_K_SCHEDULE.forEach(wk => {
+    const opt = document.createElement('option');
+    opt.value = wk.week; opt.textContent = 'Week ' + wk.week;
+    weekSel.appendChild(opt);
+  });
+  [...DIV_K_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.full; opt.textContent = t.full;
+    teamSel.appendChild(opt);
+  });
+}
+
+function renderDivKSchedule() {
+  const filterWeek = parseInt(document.getElementById('divk-schedule-week-filter')?.value) || null;
+  const filterTeam = document.getElementById('divk-schedule-team-filter')?.value || '';
+  const c = document.getElementById('divk-schedule-container');
+  if (!c) return;
+  const filtered = DIV_K_SCHEDULE.filter(wk => !filterWeek || wk.week === filterWeek);
+  c.innerHTML = SCHEDULE_COL_HEADER + filtered.map(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return '';
+    const upcomingBadge = !wk.done ? `<span class="wk-badge">UPCOMING</span>` : '';
+    const rows = matches.map(m => {
+      const scoreCell = m.score
+        ? `<div class="match-score">${m.score}</div>`
+        : `<div class="match-score" style="color:var(--muted);font-size:.72rem">TBD</div>`;
+      return `<div class="match-row">
+        <div class="match-home">${m.home}</div>${scoreCell}
+        <div class="match-away">${m.away}</div>
+        <div class="match-venue">${m.venue}</div>
+      </div>`;
+    }).join('');
+    return `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span>${upcomingBadge}</div>${rows}</div>`;
+  }).join('');
+}
+
+function populateDivKResultsFilter() {
+  const sel = document.getElementById('divk-results-team-filter');
+  if (!sel) return;
+  [...DIV_K_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.full; opt.textContent = t.full; sel.appendChild(opt);
+  });
+}
+
+function renderDivKResults() {
+  const filterTeam = document.getElementById('divk-results-team-filter').value;
+  const filterWeek = parseInt(document.getElementById('divk-results-week-filter').value) || null;
+  const c = document.getElementById('divk-results-container');
+  if (!c) return;
+  const played = DIV_K_SCHEDULE.filter(w => w.done && (!filterWeek || w.week === filterWeek));
+  let html = '';
+  played.forEach(wk => {
+    const matches = wk.matches.filter(m => !filterTeam || m.home === filterTeam || m.away === filterTeam);
+    if (matches.length === 0) return;
+    html += `<div class="week-block"><div class="week-label">WEEK ${wk.week} — <span class="wk-date">${wk.date}</span></div>`;
+    matches.forEach(m => {
+      html += `<div class="match-row"><div class="match-home">${m.home}</div><div class="match-score">${m.score}</div><div class="match-away">${m.away}</div><div class="match-venue">${m.venue}</div></div>`;
+      if (m.courts && m.courts.length > 0) {
+        m.courts.forEach(ct => {
+          const hw = ct.win === 'home'; const aw = ct.win === 'away';
+          html += '<div style="display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;padding:6px 16px 6px 28px;border-bottom:1px solid #d1d9e6;font-size:.78rem;">'
+            + '<div style="' + (hw?'font-weight:600;color:#1e293b':'color:#64748b') + '">' + ct.home + '</div>'
+            + '<div style="text-align:center;"><span style="font-size:.62rem;color:#64748b;margin-right:3px;text-transform:uppercase;letter-spacing:.5px">Ct' + ct.ct + '</span>'
+            + '<span style="font-family:\'DM Mono\',monospace;color:' + (hw?'#22c55e':aw?'#ef4444':'#64748b') + '">' + ct.sets + '</span></div>'
+            + '<div style="' + (aw?'font-weight:600;color:#1e293b':'color:#64748b') + '">' + ct.away + '</div></div>';
+        });
+      }
+    });
+    html += '</div>';
+  });
+  c.innerHTML = RESULTS_COL_HEADER + html;
+}
+
+function populateDivKPlayerFilter() {
+  const sel = document.getElementById('divk-player-team-filter');
+  if (!sel) return;
+  [...DIV_K_TEAMS].sort((a,b) => a.full.localeCompare(b.full)).forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.short; opt.textContent = t.full; sel.appendChild(opt);
+  });
+}
+
+function renderDivKPlayers() {
+  const search = (document.getElementById('divk-player-search')?.value || '').toLowerCase();
+  const teamF = document.getElementById('divk-player-team-filter')?.value || '';
+  let filtered = DIV_K_PLAYERS.filter(p => {
+    if (search && !p.name.toLowerCase().includes(search)) return false;
+    if (teamF && p.team !== teamF) return false;
+    return true;
+  });
+  filtered.sort((a,b) => a.name.localeCompare(b.name));
+  const tb = document.getElementById('tbody-divk-players');
+  tb.innerHTML = filtered.map(p => {
+    const photoHtml = p.photo ? `<img src="${_esc(p.photo)}" class="player-photo" onerror="this.style.display='none'">` : '';
+    const capTag = p.role === 'Captain' ? ' <span class="pill pill-gold" style="font-size:.6rem;padding:1px 5px;vertical-align:middle">C</span>' : '';
+    return `<tr>
+      <td>${photoHtml}${p.name}${capTag}</td>
+      <td><span class="team-badge">${p.team}</span></td>
+      <td style="font-size:.78rem;color:var(--muted)">${p.role}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('divk-player-count').textContent = `Showing ${filtered.length} of ${DIV_K_PLAYERS.length} players`;
+}
+
+// ── DIVISION K INIT ──
+renderDivKStandings();
+renderDivKTeams();
+populateDivKScheduleFilter();
+renderDivKSchedule();
+populateDivKResultsFilter();
+renderDivKResults();
+populateDivKPlayerFilter();
+renderDivKPlayers();
+
 // ─── RESTORE PAGE STATE FROM HASH ──────────────────────────────────────────
 (function restoreFromHash() {
   const h = location.hash.replace('#','');
   if (!h) return;
   const [div, page] = h.split('/');
   if (!div || !page) return;
-  // Find the correct division button and click it
-  const divBtns = {
-    'i':   document.querySelector('.div-btn[onclick*="switchDivision"]'),
-    'f':   document.querySelector('.div-btn[onclick*="switchToDivF"]'),
-    'c':   document.querySelector('.div-btn[onclick*="switchToDivC"]'),
-    'h':   document.getElementById('btn-div-h'),
-    'svg': document.querySelector('.div-btn[onclick*="switchToSvgClub"]'),
-    'admin': document.getElementById('btn-admin'),
-  };
-  const btn = divBtns[div];
+
+  if (div === 'svg') {
+    const svgBtn = document.querySelector('.div-btn[onclick*="switchToSvgClub"]');
+    if (svgBtn) switchToSvgClub(svgBtn);
+    return;
+  }
+  if (div === 'admin') return;
+
+  // Division A-K
+  const btn = document.getElementById('btn-div-' + div);
   if (!btn || btn.style.display === 'none') return;
-  // Switch to the division
-  if (div === 'i')   switchDivision('I', btn);
-  else if (div === 'f') switchToDivF(btn);
-  else if (div === 'c') switchToDivC(btn);
-  else if (div === 'h') switchToDivH(btn);
-  else if (div === 'svg') { switchToSvgClub(btn); return; }
-  else if (div === 'admin') return;
+  switchToDiv(div.toUpperCase(), btn);
+
   // Now navigate to the sub-page
   if (page && page !== 'standings') {
     const navBtn = document.querySelector('#nav-divs .nav-btn[onclick*="\''+page+'\'"]');

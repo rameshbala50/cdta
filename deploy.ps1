@@ -42,11 +42,20 @@ Get-ChildItem -Path $root -Recurse -File | ForEach-Object {
     }
 }
 
-# Create subdirectories
+# Create subdirectories (one level at a time so nested dirs work on GoDaddy)
 $dirs = $files | ForEach-Object { Split-Path $_ -Parent } | Where-Object { $_ } | Sort-Object -Unique
-Write-Host "Creating directories..." -ForegroundColor Yellow
+$allDirs = @{}
 foreach ($d in $dirs) {
     $d = $d.Replace('\','/')
+    $parts = $d -split '/'
+    for ($j = 1; $j -le $parts.Count; $j++) {
+        $partial = ($parts[0..($j-1)]) -join '/'
+        $allDirs[$partial] = $true
+    }
+}
+$sortedDirs = $allDirs.Keys | Sort-Object { ($_ -split '/').Count }, { $_ }
+Write-Host "Creating $($sortedDirs.Count) directories..." -ForegroundColor Yellow
+foreach ($d in $sortedDirs) {
     try {
         $ftp = [System.Net.FtpWebRequest]::Create("ftp://${FTP_HOST}${FTP_REMOTE_DIR}/${d}/")
         $ftp.Method = [System.Net.WebRequestMethods+Ftp]::MakeDirectory
@@ -54,7 +63,10 @@ foreach ($d in $dirs) {
         $ftp.UsePassive = $true
         $response = $ftp.GetResponse()
         $response.Close()
-    } catch {}
+        Write-Host "  mkdir $d" -ForegroundColor Green
+    } catch {
+        # Directory may already exist — ignore
+    }
 }
 
 # Upload files

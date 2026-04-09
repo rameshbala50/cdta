@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Coimbatore District Tennis Association – CDTA 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css?v=202604022222">
+<link rel="stylesheet" href="css/main.css?v=202604091139">
 </head>
 <body>
 
@@ -39,11 +39,19 @@
     </div>
   </div>
   <div class="division-bar">
+    <button class="div-btn" onclick="switchToOverview(this)" style="border-bottom-color:transparent">Overview</button>
     <button class="div-btn" onclick="switchToSvgClub(this)" style="border-bottom-color:transparent">SVG Players</button>
-    <button class="div-btn active" onclick="switchDivision('I', this)">Division I</button>
-    <button class="div-btn" onclick="switchToDivF(this)">Division F</button>
-    <button class="div-btn" onclick="switchToDivC(this)">Division C</button>
-    <button class="div-btn" id="btn-div-h" onclick="switchToDivH(this)" style="display:none">Division H</button>
+    <button class="div-btn" id="btn-div-a" onclick="switchToDiv('A', this)">Div A</button>
+    <button class="div-btn" id="btn-div-b" onclick="switchToDiv('B', this)">Div B</button>
+    <button class="div-btn" id="btn-div-c" onclick="switchToDiv('C', this)">Div C</button>
+    <button class="div-btn" id="btn-div-d" onclick="switchToDiv('D', this)">Div D</button>
+    <button class="div-btn" id="btn-div-e" onclick="switchToDiv('E', this)">Div E</button>
+    <button class="div-btn" id="btn-div-f" onclick="switchToDiv('F', this)">Div F</button>
+    <button class="div-btn" id="btn-div-g" onclick="switchToDiv('G', this)">Div G</button>
+    <button class="div-btn" id="btn-div-h" onclick="switchToDiv('H', this)" style="display:none">Div H</button>
+    <button class="div-btn active" id="btn-div-i" onclick="switchToDiv('I', this)">Div I</button>
+    <button class="div-btn" id="btn-div-j" onclick="switchToDiv('J', this)">Div J</button>
+    <button class="div-btn" id="btn-div-k" onclick="switchToDiv('K', this)">Div K</button>
     <button class="div-btn" id="btn-admin" onclick="switchToAdmin(this)" style="display:none">Admin</button>
   </div>
 </header>
@@ -65,16 +73,78 @@
     <button id="svgsubbtn-players"     class="nav-btn"        onclick="showSvgTab('players',this)">Players</button>
     <button id="svgsubbtn-rank"        class="nav-btn"        onclick="showSvgTab('rank',this)" style="display:none">Rank</button>
   </div>
+  <!-- Admin tabs (shown only when Admin is active) -->
+  <div id="nav-admin" style="display:none">
+    <button id="adsubbtn-users"    class="nav-btn active" onclick="showAdminTab('users',this)">User Management</button>
+    <button id="adsubbtn-login"    class="nav-btn"        onclick="showAdminTab('login',this)">Login History</button>
+    <button id="adsubbtn-usage"    class="nav-btn"        onclick="showAdminTab('usage',this)">Usage Log</button>
+    <button id="adsubbtn-activity" class="nav-btn"        onclick="showAdminTab('activity',this)">Activity Log</button>
+    <button id="adsubbtn-testplan" class="nav-btn"        onclick="showAdminTab('testplan',this)">Test Plan</button>
+    <button id="adsubbtn-data"     class="nav-btn"        onclick="showAdminTab('data',this)">Data Tools</button>
+    <button id="adsubbtn-settings" class="nav-btn"        onclick="showAdminTab('settings',this)">Settings</button>
+  </div>
+  <!-- Overview tabs (shown only when Overview is active) -->
+  <div id="nav-overview" style="display:none">
+    <button id="ovsubbtn-leaders"  class="nav-btn active" onclick="showOverviewTab('leaders',this)">Leaders</button>
+    <button id="ovsubbtn-teams"    class="nav-btn"        onclick="showOverviewTab('teams',this)">All Teams</button>
+    <button id="ovsubbtn-stats"    class="nav-btn"        onclick="showOverviewTab('stats',this)">League Stats</button>
+  </div>
 </nav>
+
+<!-- ═══════════════ OVERVIEW (CONSOLIDATED DASHBOARD) ═══════════════ -->
+<div id="page-overview-leaders" class="page">
+  <div class="section-title">CDTA 2026 — All Divisions Overview</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val" id="ov-total-divs">11</div><div class="lbl">Divisions</div></div>
+    <div class="stat-box"><div class="val" id="ov-total-teams">—</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="ov-total-players">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val" id="ov-total-matches">—</div><div class="lbl">Matches</div></div>
+    <div class="stat-box"><div class="val" id="ov-total-courts">—</div><div class="lbl">Courts Played</div></div>
+  </div>
+  <div class="section-title" style="font-size:1.05rem;margin-top:24px">Division Leaders</div>
+  <div id="ov-leaders-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+</div>
+<div id="page-overview-teams" class="page">
+  <div class="section-title">All Teams — All Divisions</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="ov-team-div-filter" onchange="renderOverviewTeams()">
+      <option value="">All Divisions</option>
+      <option value="A">Division A</option><option value="B">Division B</option>
+      <option value="C">Division C</option><option value="D">Division D</option>
+      <option value="E">Division E</option><option value="F">Division F</option>
+      <option value="G">Division G</option><option value="H">Division H</option>
+      <option value="I">Division I</option><option value="J">Division J</option>
+      <option value="K">Division K</option>
+    </select>
+    <input type="text" id="ov-team-search" placeholder="Search team name..." oninput="renderOverviewTeams()" style="padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:200px">
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Division</th><th>Rank</th><th>Team</th><th>Pts</th><th>Sets W-L</th><th>Games W-L</th></tr></thead>
+      <tbody id="tbody-ov-teams"></tbody>
+    </table>
+  </div>
+  <div id="ov-team-count" style="font-size:.78rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-overview-stats" class="page">
+  <div class="section-title">League Statistics</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Division</th><th>Teams</th><th>Players</th><th>Weeks</th><th>Matches</th><th>Courts</th><th>Top Team</th><th>Top Pts</th></tr></thead>
+      <tbody id="tbody-ov-stats"></tbody>
+    </table>
+  </div>
+</div>
 
 <!-- ═══════════════ DIV_I_STANDINGS ═══════════════ -->
 <div id="page-standings" class="page active">
-  <div class="section-title">Current Standings — Week 9</div>
+  <div class="section-title">Division I — Final Standings</div>
   <div class="stat-grid">
     <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
     <div class="stat-box"><div class="val">104</div><div class="lbl">Players</div></div>
     <div class="stat-box"><div class="val">85♂ · 19♀</div><div class="lbl">Male / Female</div></div>
-    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
     <div class="stat-box"><div class="val">10</div><div class="lbl">Walk-overs Given</div></div>
   </div>
   <div class="table-wrap">
@@ -83,8 +153,8 @@
         <tr>
           <th onclick="sortTable('tbl-standings',0)">#</th>
           <th onclick="sortTable('tbl-standings',1)">Team</th>
-          <th onclick="sortTable('tbl-standings',2)">Pts</th>
-          <th onclick="sortTable('tbl-standings',3)" title="Courts played (3 per match week)">Courts</th>
+          <th onclick="sortTable('tbl-standings',2)" title="Matches played × 3 (max pts available so far)">Played Pts</th>
+          <th onclick="sortTable('tbl-standings',3)">Current Pts</th>
           <th onclick="sortTable('tbl-standings',4)">Sets Won</th>
           <th onclick="sortTable('tbl-standings',5)">Sets Lost</th>
           <th onclick="sortTable('tbl-standings',6)">Games Won</th>
@@ -146,6 +216,15 @@
 <!-- ═══════════════ DIV_I_SCHEDULE ═══════════════ -->
 <div id="page-schedule" class="page">
   <div class="section-title">Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="schedule-week-filter" onchange="renderSchedule()">
+      <option value="">All Weeks</option>
+    </select>
+    <select id="schedule-team-filter" onchange="renderSchedule()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
   <div id="schedule-container"></div>
 </div>
 
@@ -311,12 +390,12 @@
 <!-- ═══════════════ DIVISION F ═══════════════ -->
 <!-- ═══════════════ DIVISION F PAGES ═══════════════ -->
 <div id="page-divf-standings" class="page">
-  <div class="section-title">Division F — Standings · Week 9</div>
+  <div class="section-title">Division F — Final Standings</div>
   <div class="stat-grid">
     <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
     <div class="stat-box"><div class="val">105</div><div class="lbl">Players</div></div>
     <div class="stat-box"><div class="val">97♂ · 8♀</div><div class="lbl">Male / Female</div></div>
-    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
     <div class="stat-box"><div class="val">3</div><div class="lbl">Walk-overs Given</div></div>
   </div>
   <div class="table-wrap">
@@ -325,8 +404,8 @@
         <tr>
           <th onclick="sortTable('tbl-divf-standings',0)">#</th>
           <th onclick="sortTable('tbl-divf-standings',1)">Team</th>
-          <th onclick="sortTable('tbl-divf-standings',2)">Pts</th>
-          <th onclick="sortTable('tbl-divf-standings',3)" title="Team matches played">Weeks</th>
+          <th onclick="sortTable('tbl-divf-standings',2)" title="Matches played × 3 (max pts available so far)">Played Pts</th>
+          <th onclick="sortTable('tbl-divf-standings',3)">Current Pts</th>
           <th onclick="sortTable('tbl-divf-standings',4)">Sets Won</th>
           <th onclick="sortTable('tbl-divf-standings',5)">Sets Lost</th>
           <th onclick="sortTable('tbl-divf-standings',6)">Games Won</th>
@@ -376,6 +455,15 @@
 
 <div id="page-divf-schedule" class="page">
   <div class="section-title">Division F — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divf-schedule-week-filter" onchange="renderDivFSchedule()">
+      <option value="">All Weeks</option>
+    </select>
+    <select id="divf-schedule-team-filter" onchange="renderDivFSchedule()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
   <div id="divf-schedule-container"></div>
 </div>
 
@@ -469,12 +557,12 @@
 
 <!-- ═══════════════ DIVISION C PAGES ═══════════════ -->
 <div id="page-divc-standings" class="page">
-  <div class="section-title">Division C — Standings · Week 9</div>
+  <div class="section-title">Division C — Final Standings</div>
   <div class="stat-grid" style="margin-bottom:24px;">
     <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
     <div class="stat-box"><div class="val">100</div><div class="lbl">Players</div></div>
     <div class="stat-box"><div class="val">96♂ · 4♀</div><div class="lbl">Male / Female</div></div>
-    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
     <div class="stat-box"><div class="val">8</div><div class="lbl">Walk-overs Given</div></div>
   </div>
   <div class="table-wrap">
@@ -483,8 +571,8 @@
         <tr>
           <th onclick="sortTable('tbl-divc-standings',0)">#</th>
           <th onclick="sortTable('tbl-divc-standings',1)">Team</th>
-          <th onclick="sortTable('tbl-divc-standings',2)">Pts</th>
-          <th onclick="sortTable('tbl-divc-standings',3)" title="Team matches played">Weeks</th>
+          <th onclick="sortTable('tbl-divc-standings',2)" title="Matches played × 3 (max pts available so far)">Played Pts</th>
+          <th onclick="sortTable('tbl-divc-standings',3)">Current Pts</th>
           <th onclick="sortTable('tbl-divc-standings',4)">Sets Won</th>
           <th onclick="sortTable('tbl-divc-standings',5)">Sets Lost</th>
           <th onclick="sortTable('tbl-divc-standings',6)">Games Won</th>
@@ -537,6 +625,15 @@
 
 <div id="page-divc-schedule" class="page">
   <div class="section-title">Division C — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divc-schedule-week-filter" onchange="renderDivCSchedule()">
+      <option value="">All Weeks</option>
+    </select>
+    <select id="divc-schedule-team-filter" onchange="renderDivCSchedule()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
   <div id="divc-schedule-container"></div>
 </div>
 
@@ -634,11 +731,11 @@
 
 <!-- ═══════════════ DIVISION H PAGES ═══════════════ -->
 <div id="page-divh-standings" class="page">
-  <div class="section-title">Division H — Standings · Week 9</div>
+  <div class="section-title">Division H — Final Standings</div>
   <div class="stat-grid" style="margin-bottom:24px;">
     <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
     <div class="stat-box"><div class="val" id="divh-player-total">—</div><div class="lbl">Players</div></div>
-    <div class="stat-box"><div class="val">3</div><div class="lbl">Weeks Remaining</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
     <div class="stat-box"><div class="val">3</div><div class="lbl">Walk-overs Given</div></div>
   </div>
   <div class="table-wrap">
@@ -647,8 +744,8 @@
         <tr>
           <th onclick="sortTable('tbl-divh-standings',0)">#</th>
           <th onclick="sortTable('tbl-divh-standings',1)">Team</th>
-          <th onclick="sortTable('tbl-divh-standings',2)">Pts</th>
-          <th onclick="sortTable('tbl-divh-standings',3)" title="Team matches played">Weeks</th>
+          <th onclick="sortTable('tbl-divh-standings',2)" title="Matches played × 3 (max pts available so far)">Played Pts</th>
+          <th onclick="sortTable('tbl-divh-standings',3)">Current Pts</th>
           <th onclick="sortTable('tbl-divh-standings',4)">Sets Won</th>
           <th onclick="sortTable('tbl-divh-standings',5)">Sets Lost</th>
           <th onclick="sortTable('tbl-divh-standings',6)">Games Won</th>
@@ -691,6 +788,15 @@
 
 <div id="page-divh-schedule" class="page">
   <div class="section-title">Division H — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divh-schedule-week-filter" onchange="renderDivHSchedule()">
+      <option value="">All Weeks</option>
+    </select>
+    <select id="divh-schedule-team-filter" onchange="renderDivHSchedule()">
+      <option value="">All Teams</option>
+    </select>
+  </div>
   <div id="divh-schedule-container"></div>
 </div>
 
@@ -776,19 +882,519 @@
   </div>
 </div>
 
+<!-- ═══════════════ PLACEHOLDER DIVISIONS (A, B, D, E, G, J, K) ═══════════════ -->
+<!-- These will be populated with data when provided. Same structure as Div I/C/F/H -->
+
+<!-- DIVISION A -->
+<div id="page-diva-standings" class="page">
+  <div class="section-title">Division A — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="diva-player-total">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-diva-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-diva-standings',0)">#</th>
+        <th onclick="sortTable('tbl-diva-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-diva-standings',2)" title="Matches played × 3">Played Pts</th>
+        <th onclick="sortTable('tbl-diva-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-diva-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-diva-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-diva-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-diva-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-diva-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-diva-projection" class="page">
+  <div class="section-title">Division A — Points Projection</div>
+  <div class="coming-soon-div"><p>Season complete</p></div>
+</div>
+<div id="page-diva-teams" class="page">
+  <div class="section-title">Division A — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-diva-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-diva-schedule" class="page">
+  <div class="section-title">Division A — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="diva-schedule-week-filter" onchange="renderDivASchedule()"><option value="">All Weeks</option></select>
+    <select id="diva-schedule-team-filter" onchange="renderDivASchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="diva-schedule-container"></div>
+</div>
+<div id="page-diva-results" class="page">
+  <div class="section-title">Division A — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="diva-results-week-filter" onchange="renderDivAResults()"><option value="">All Weeks</option></select>
+    <select id="diva-results-team-filter" onchange="renderDivAResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="diva-results-container"></div>
+</div>
+<div id="page-diva-players" class="page">
+  <div class="section-title">Division A — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="diva-player-search" placeholder="Search player name…" oninput="renderDivAPlayers()">
+    <select id="diva-player-team-filter" onchange="renderDivAPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-diva-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-diva-players"></tbody>
+    </table>
+  </div>
+  <div id="diva-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-diva-stats" class="page">
+  <div class="section-title">Division A — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
+<!-- DIVISION B -->
+<div id="page-divb-standings" class="page">
+  <div class="section-title">Division B — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="divb-player-total">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divb-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-divb-standings',0)">#</th>
+        <th onclick="sortTable('tbl-divb-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-divb-standings',2)" title="Matches played × 3">Played Pts</th>
+        <th onclick="sortTable('tbl-divb-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-divb-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-divb-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-divb-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-divb-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-divb-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-divb-projection" class="page">
+  <div class="section-title">Division B — Points Projection</div>
+  <div class="coming-soon-div"><p>Season complete</p></div>
+</div>
+<div id="page-divb-teams" class="page">
+  <div class="section-title">Division B — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-divb-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-divb-schedule" class="page">
+  <div class="section-title">Division B — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divb-schedule-week-filter" onchange="renderDivBSchedule()"><option value="">All Weeks</option></select>
+    <select id="divb-schedule-team-filter" onchange="renderDivBSchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divb-schedule-container"></div>
+</div>
+<div id="page-divb-results" class="page">
+  <div class="section-title">Division B — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divb-results-week-filter" onchange="renderDivBResults()"><option value="">All Weeks</option></select>
+    <select id="divb-results-team-filter" onchange="renderDivBResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divb-results-container"></div>
+</div>
+<div id="page-divb-players" class="page">
+  <div class="section-title">Division B — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divb-player-search" placeholder="Search player name…" oninput="renderDivBPlayers()">
+    <select id="divb-player-team-filter" onchange="renderDivBPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divb-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-divb-players"></tbody>
+    </table>
+  </div>
+  <div id="divb-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-divb-stats" class="page">
+  <div class="section-title">Division B — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
+<!-- DIVISION D -->
+<div id="page-divd-standings" class="page">
+  <div class="section-title">Division D — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="divd-player-total">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divd-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-divd-standings',0)">#</th>
+        <th onclick="sortTable('tbl-divd-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-divd-standings',2)" title="Matches played × 3">Played Pts</th>
+        <th onclick="sortTable('tbl-divd-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-divd-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-divd-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-divd-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-divd-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-divd-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-divd-projection" class="page">
+  <div class="section-title">Division D — Points Projection</div>
+  <div class="coming-soon-div"><p>Season complete</p></div>
+</div>
+<div id="page-divd-teams" class="page">
+  <div class="section-title">Division D — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-divd-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-divd-schedule" class="page">
+  <div class="section-title">Division D — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divd-schedule-week-filter" onchange="renderDivDSchedule()"><option value="">All Weeks</option></select>
+    <select id="divd-schedule-team-filter" onchange="renderDivDSchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divd-schedule-container"></div>
+</div>
+<div id="page-divd-results" class="page">
+  <div class="section-title">Division D — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divd-results-week-filter" onchange="renderDivDResults()"><option value="">All Weeks</option></select>
+    <select id="divd-results-team-filter" onchange="renderDivDResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divd-results-container"></div>
+</div>
+<div id="page-divd-players" class="page">
+  <div class="section-title">Division D — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divd-player-search" placeholder="Search player name…" oninput="renderDivDPlayers()">
+    <select id="divd-player-team-filter" onchange="renderDivDPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divd-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-divd-players"></tbody>
+    </table>
+  </div>
+  <div id="divd-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-divd-stats" class="page">
+  <div class="section-title">Division D — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
+<!-- DIVISION E -->
+<div id="page-dive-standings" class="page">
+  <div class="section-title">Division E — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="dive-player-total">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-dive-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-dive-standings',0)">#</th>
+        <th onclick="sortTable('tbl-dive-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-dive-standings',2)" title="Matches played × 3">Played Pts</th>
+        <th onclick="sortTable('tbl-dive-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-dive-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-dive-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-dive-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-dive-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-dive-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-dive-projection" class="page">
+  <div class="section-title">Division E — Points Projection</div>
+  <div class="coming-soon-div"><p>Season complete</p></div>
+</div>
+<div id="page-dive-teams" class="page">
+  <div class="section-title">Division E — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-dive-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-dive-schedule" class="page">
+  <div class="section-title">Division E — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="dive-schedule-week-filter" onchange="renderDivESchedule()"><option value="">All Weeks</option></select>
+    <select id="dive-schedule-team-filter" onchange="renderDivESchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="dive-schedule-container"></div>
+</div>
+<div id="page-dive-results" class="page">
+  <div class="section-title">Division E — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="dive-results-week-filter" onchange="renderDivEResults()"><option value="">All Weeks</option></select>
+    <select id="dive-results-team-filter" onchange="renderDivEResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="dive-results-container"></div>
+</div>
+<div id="page-dive-players" class="page">
+  <div class="section-title">Division E — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="dive-player-search" placeholder="Search player name…" oninput="renderDivEPlayers()">
+    <select id="dive-player-team-filter" onchange="renderDivEPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-dive-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-dive-players"></tbody>
+    </table>
+  </div>
+  <div id="dive-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-dive-stats" class="page">
+  <div class="section-title">Division E — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
+<!-- DIVISION G -->
+<div id="page-divg-standings" class="page">
+  <div class="section-title">Division G — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">11</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="divg-player-total">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divg-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-divg-standings',0)">#</th>
+        <th onclick="sortTable('tbl-divg-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-divg-standings',2)" title="Matches played × 3">Played Pts</th>
+        <th onclick="sortTable('tbl-divg-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-divg-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-divg-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-divg-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-divg-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-divg-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-divg-projection" class="page">
+  <div class="section-title">Division G — Points Projection</div>
+  <div class="coming-soon-div"><p>Season complete</p></div>
+</div>
+<div id="page-divg-teams" class="page">
+  <div class="section-title">Division G — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-divg-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-divg-schedule" class="page">
+  <div class="section-title">Division G — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divg-schedule-week-filter" onchange="renderDivGSchedule()"><option value="">All Weeks</option></select>
+    <select id="divg-schedule-team-filter" onchange="renderDivGSchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divg-schedule-container"></div>
+</div>
+<div id="page-divg-results" class="page">
+  <div class="section-title">Division G — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divg-results-week-filter" onchange="renderDivGResults()"><option value="">All Weeks</option></select>
+    <select id="divg-results-team-filter" onchange="renderDivGResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divg-results-container"></div>
+</div>
+<div id="page-divg-players" class="page">
+  <div class="section-title">Division G — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divg-player-search" placeholder="Search player name…" oninput="renderDivGPlayers()">
+    <select id="divg-player-team-filter" onchange="renderDivGPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divg-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-divg-players"></tbody>
+    </table>
+  </div>
+  <div id="divg-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-divg-stats" class="page">
+  <div class="section-title">Division G — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
+<!-- DIVISION J -->
+<div id="page-divj-standings" class="page">
+  <div class="section-title">Division J — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">10</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="divj-player-total">—</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divj-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-divj-standings',0)">#</th>
+        <th onclick="sortTable('tbl-divj-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-divj-standings',2)" title="Matches played × 3">Played Pts</th>
+        <th onclick="sortTable('tbl-divj-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-divj-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-divj-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-divj-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-divj-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-divj-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-divj-projection" class="page">
+  <div class="section-title">Division J — Points Projection</div>
+  <div class="coming-soon-div"><p>Projection data coming soon</p></div>
+</div>
+<div id="page-divj-teams" class="page">
+  <div class="section-title">Division J — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-divj-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-divj-schedule" class="page">
+  <div class="section-title">Division J — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divj-schedule-week-filter" onchange="renderDivJSchedule()"><option value="">All Weeks</option></select>
+    <select id="divj-schedule-team-filter" onchange="renderDivJSchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divj-schedule-container"></div>
+</div>
+<div id="page-divj-results" class="page">
+  <div class="section-title">Division J — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divj-results-week-filter" onchange="renderDivJResults()"><option value="">All Weeks</option></select>
+    <select id="divj-results-team-filter" onchange="renderDivJResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divj-results-container"></div>
+</div>
+<div id="page-divj-players" class="page">
+  <div class="section-title">Division J — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divj-player-search" placeholder="Search player name…" oninput="renderDivJPlayers()">
+    <select id="divj-player-team-filter" onchange="renderDivJPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divj-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-divj-players"></tbody>
+    </table>
+  </div>
+  <div id="divj-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-divj-stats" class="page">
+  <div class="section-title">Division J — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
+<!-- DIVISION K -->
+<div id="page-divk-standings" class="page">
+  <div class="section-title">Division K — Final Standings</div>
+  <div class="stat-grid">
+    <div class="stat-box"><div class="val">7</div><div class="lbl">Teams</div></div>
+    <div class="stat-box"><div class="val" id="divk-player-total">62</div><div class="lbl">Players</div></div>
+    <div class="stat-box"><div class="val">0</div><div class="lbl">Weeks Remaining</div></div>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divk-standings">
+      <thead><tr>
+        <th onclick="sortTable('tbl-divk-standings',0)">#</th>
+        <th onclick="sortTable('tbl-divk-standings',1)">Team</th>
+        <th onclick="sortTable('tbl-divk-standings',2)" title="Matches played × 3 (max pts available so far)">Played Pts</th>
+        <th onclick="sortTable('tbl-divk-standings',3)">Current Pts</th>
+        <th onclick="sortTable('tbl-divk-standings',4)">Sets Won</th>
+        <th onclick="sortTable('tbl-divk-standings',5)">Sets Lost</th>
+        <th onclick="sortTable('tbl-divk-standings',6)">Games Won</th>
+        <th onclick="sortTable('tbl-divk-standings',7)">Games Lost</th>
+      </tr></thead>
+      <tbody id="tbody-divk-standings"></tbody>
+    </table>
+  </div>
+</div>
+<div id="page-divk-projection" class="page">
+  <div class="section-title">Division K — Points Projection</div>
+  <div class="coming-soon-div"><p>Projection data coming soon</p></div>
+</div>
+<div id="page-divk-teams" class="page">
+  <div class="section-title">Division K — Team Directory</div>
+  <div class="table-wrap">
+    <table><thead><tr><th>#</th><th>Team</th><th>Short</th><th>Captain</th><th>Club / Venue</th><th>Players</th></tr></thead>
+    <tbody id="tbody-divk-teams"></tbody></table>
+  </div>
+</div>
+<div id="page-divk-schedule" class="page">
+  <div class="section-title">Division K — Full Season Schedule</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divk-schedule-week-filter" onchange="renderDivKSchedule()"><option value="">All Weeks</option></select>
+    <select id="divk-schedule-team-filter" onchange="renderDivKSchedule()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divk-schedule-container"></div>
+</div>
+<div id="page-divk-results" class="page">
+  <div class="section-title">Division K — Match Results</div>
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <select id="divk-results-week-filter" onchange="renderDivKResults()"><option value="">All Weeks</option>
+      <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
+      <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
+      <option value="7">Week 7</option>
+    </select>
+    <select id="divk-results-team-filter" onchange="renderDivKResults()"><option value="">All Teams</option></select>
+  </div>
+  <div id="divk-results-container"></div>
+</div>
+<div id="page-divk-players" class="page">
+  <div class="section-title">Division K — Player Roster</div>
+  <div class="filter-row">
+    <input type="text" id="divk-player-search" placeholder="Search player name…" oninput="renderDivKPlayers()">
+    <select id="divk-player-team-filter" onchange="renderDivKPlayers()"><option value="">All Teams</option></select>
+  </div>
+  <div class="table-wrap">
+    <table id="tbl-divk-players">
+      <thead><tr><th>Player Name</th><th>Team</th><th>Role</th></tr></thead>
+      <tbody id="tbody-divk-players"></tbody>
+    </table>
+  </div>
+  <div id="divk-player-count" style="font-size:.8rem;color:var(--muted);margin-top:8px"></div>
+</div>
+<div id="page-divk-stats" class="page">
+  <div class="section-title">Division K — League Statistics</div>
+  <div class="coming-soon-div"><p>Statistics coming soon</p></div>
+</div>
+
 <!-- ═══════════════ ADMIN ═══════════════ -->
 <div id="page-admin" class="page">
-
-  <!-- Admin sub-nav -->
-  <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-    <button id="admin-tab-users" class="admin-subnav active" onclick="showAdminTab('users',this)">User Management</button>
-    <button id="admin-tab-login" class="admin-subnav" onclick="showAdminTab('login',this)">Login History</button>
-    <button id="admin-tab-usage" class="admin-subnav" onclick="showAdminTab('usage',this)">Usage Log</button>
-    <button id="admin-tab-activity" class="admin-subnav" onclick="showAdminTab('activity',this)">Activity Log</button>
-    <button id="admin-tab-testplan" class="admin-subnav" onclick="showAdminTab('testplan',this)">Test Plan</button>
-    <button id="admin-tab-data" class="admin-subnav" onclick="showAdminTab('data',this)">Data Tools</button>
-    <button id="admin-tab-settings" class="admin-subnav" onclick="showAdminTab('settings',this)">Settings</button>
-  </div>
 
   <!-- User Management -->
   <div id="admin-users" style="margin-bottom:24px">
@@ -905,9 +1511,17 @@
         <div>
           <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Week</label>
           <select id="dl-week" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:120px">
-            <option value="10">Week 10</option>
-            <option value="9">Week 9</option>
+            <option value="all">All Weeks</option>
+            <option value="1">Week 1</option>
+            <option value="2">Week 2</option>
+            <option value="3">Week 3</option>
+            <option value="4">Week 4</option>
+            <option value="5">Week 5</option>
+            <option value="6">Week 6</option>
+            <option value="7">Week 7</option>
             <option value="8">Week 8</option>
+            <option value="9">Week 9</option>
+            <option value="10">Week 10</option>
             <option value="11">Week 11</option>
           </select>
         </div>
@@ -915,10 +1529,17 @@
           <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Division</label>
           <select id="dl-division" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:160px">
             <option value="all">All Divisions</option>
-            <option value="I">Division I</option>
+            <option value="A">Division A</option>
+            <option value="B">Division B</option>
             <option value="C">Division C</option>
+            <option value="D">Division D</option>
+            <option value="E">Division E</option>
             <option value="F">Division F</option>
+            <option value="G">Division G</option>
             <option value="H">Division H</option>
+            <option value="I">Division I</option>
+            <option value="J">Division J</option>
+            <option value="K">Division K</option>
           </select>
         </div>
         <button id="dl-load-btn" onclick="adminLoadMatchData()" style="padding:8px 20px;background:var(--accent2);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">🔄 Load Data</button>
@@ -1013,22 +1634,28 @@
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
       <div style="font-weight:600;font-size:.85rem;margin-bottom:10px">Dashboard Header</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Week Badge</label><input id="set-week" type="text" value="WEEK 9 OF 11" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:160px"></div>
-        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Last Updated</label><input id="set-updated" type="text" value="23 Mar 2026" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:160px"></div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Week Badge</label><input id="set-week" type="text" value="SEASON COMPLETE" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:160px"></div>
+        <div><label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:3px">Last Updated</label><input id="set-updated" type="text" value="08 Apr 2026" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:.82rem;width:160px"></div>
         <button onclick="adminApplySettings()" style="padding:8px 20px;background:var(--green);color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">Apply</button>
       </div>
       <div id="settings-msg" style="font-size:.78rem;margin-top:8px;min-height:1.2em"></div>
     </div>
 
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+      <div style="font-weight:600;font-size:.85rem;margin-bottom:10px">League Statistics</div>
+      <div id="settings-stats" style="font-size:.8rem;line-height:1.9;color:var(--muted)"></div>
+    </div>
+
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
       <div style="font-weight:600;font-size:.85rem;margin-bottom:10px">App Info</div>
       <div style="font-size:.8rem;line-height:1.8;color:var(--muted)">
-        <strong>Version:</strong> 2.0 (Week 9)<br>
-        <strong>Divisions:</strong> 4 (I, C, F, H)<br>
+        <strong>Version:</strong> 3.0 (Season Complete)<br>
+        <strong>Divisions:</strong> 11 (A through K)<br>
         <strong>Architecture:</strong> Static HTML + Vanilla JS, no backend<br>
-        <strong>Data:</strong> Hardcoded in JS data files<br>
+        <strong>Data:</strong> Scraped from league.cdta.co.in + manual entries<br>
         <strong>Hosting:</strong> GoDaddy (akilanramesh.com/cdta/)<br>
-        <strong>Source:</strong> c:\My Cloud\Claude\cdta\
+        <strong>Source:</strong> c:\My Cloud\Claude\cdta\<br>
+        <strong>Skill:</strong> /load-division &lt;letter&gt; — auto-load any division
       </div>
     </div>
   </div>
@@ -1036,11 +1663,18 @@
 </div><!-- end page-admin -->
 
 <!-- Data files must load before app logic -->
-<script src="data/auth.js?v=202604022222"></script>
-<script src="data/division-i.js?v=202604022222"></script>
-<script src="data/division-c.js?v=202604022222"></script>
-<script src="data/division-f.js?v=202604022222"></script>
-<script src="data/division-h.js?v=202604022222"></script>
-<script src="js/app.js?v=202604022222"></script>
+<script src="data/auth.js?v=202604091139"></script>
+<script src="data/division-i.js?v=202604091139"></script>
+<script src="data/division-c.js?v=202604091139"></script>
+<script src="data/division-f.js?v=202604091139"></script>
+<script src="data/division-h.js?v=202604091139"></script>
+<script src="data/division-a.js?v=202604091139"></script>
+<script src="data/division-b.js?v=202604091139"></script>
+<script src="data/division-d.js?v=202604091139"></script>
+<script src="data/division-e.js?v=202604091139"></script>
+<script src="data/division-g.js?v=202604091139"></script>
+<script src="data/division-j.js?v=202604091139"></script>
+<script src="data/division-k.js?v=202604091139"></script>
+<script src="js/app.js?v=202604091139"></script>
 </body>
 </html>
