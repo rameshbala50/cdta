@@ -11,6 +11,7 @@ Latest entries first.
 
 ### Added
 - **Documentation suite** — README, Functional Spec, Technical Spec, Data Schema, User Guide, Admin Runbook, Deployment Guide, Changelog (this file)
+- **PDF versions** of all 8 docs in `docs/pdf/` (built via Chrome headless from markdown sources). Build script: `docs/pdf/_build_pdfs.py`
 - `recomputeDivStats()` helper in `js/app.js` — derives `gamesPlayed`, `wins`, partner counts, and `KEY_PAIRS` wins from `DIV_X_SCHEDULE` at page load. Applied to divisions C, F, H, I.
 - Player name normalization — strips dots/commas/apostrophes so `J.SURESH KUMAR` (schedule) matches `J. Suresh Kumar` (roster)
 
@@ -23,6 +24,14 @@ Latest entries first.
 ### Fixed
 - Standings "Played Pts" showing 90 instead of 30 — render functions for all 11 divisions corrected
 - Most Active Doubles Pairs showing `null` wins for Div C, F, I
+- Edge headless `--print-to-pdf` was failing silently → switched PDF builder to Chrome headless
+
+### Removed
+- `data/division-{c,f,h,i}.js.bak` — pre-refresh backups (Git history is the real backup)
+- `data/division-{c,f,i}-partners-corrected.js` — stale one-off fixes, replaced by runtime `recomputeDivStats()`
+- `audit-partners.js` — old standalone Node script, replaced by admin Data Tools → Integrity Check
+- `DOCS.md` — superseded by new `README.md` + `docs/` folder
+- `cdta2026_dashboard_w8.html` and `cdta2026_discussion_w8.md` — obsolete week-8 snapshots
 
 ### Repository
 - Branch `workver` merged into `main` (fast-forward, 8 commits) and deleted
