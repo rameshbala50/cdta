@@ -115,8 +115,8 @@ function renderProjection() {
   const playedMap = {};
   DIV_I_STANDINGS.forEach(s => playedMap[s.short] = s.played);
   tb.innerHTML = [...DIV_I_PROJECTIONS].sort((a,b) => b.projected - a.projected).map(p => {
-    const matchesPlayed = playedMap[p.short] || 0;
-    const playedPts = matchesPlayed * 3; // max pts from played matches (3 courts × 1 pt each, but 3 pts per match max)
+    const playedPts = playedMap[p.short] || 0;
+    const matchesPlayed = Math.floor(playedPts / 3);
     const ptsPct = playedPts > 0 ? Math.round((p.current / playedPts) * 100) : 0;
     const isMyTeam = p.short === 'STARS';
     return `
@@ -537,13 +537,14 @@ function renderDivCProjection() {
   if (!tb) return;
   const maxPts = 24;
   tb.innerHTML = [...DIV_C_PROJECTIONS].sort((a,b) => b.projected - a.projected).map(p => {
-    const playedPts = p.played * 3;
+    const playedPts = (DIV_C_STANDINGS.find(s => s.short === p.short) || { played: 0 }).played;
+    const matchesPlayed = Math.floor(playedPts / 3);
     const ptsPct = playedPts > 0 ? Math.round((p.current / playedPts) * 100) : 0;
     const isBlues = p.short === 'SVG-C';
     return `<tr${isBlues?' style="background:#fffbeb;border-left:3px solid var(--accent)"':''}>
       <td class="rank-cell ${p.rank<=3?'top3':''}">${p.rank}</td>
       <td><span class="team-badge">${p.short}</span> ${p.full}${isBlues?' <span style="font-size:.62rem;color:var(--accent);background:rgba(184,122,16,.15);padding:2px 7px;border-radius:3px;margin-left:4px">SVG CLUB</span>':''}</td>
-      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${p.played}m)</span></td>
+      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matchesPlayed}m)</span></td>
       <td class="pts-cell">${p.current} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
       <td style="color:var(--green);font-family:'DM Mono',monospace;font-weight:600">+${p.expected}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:700;color:#1e3a5f">~${p.projected}</td>
@@ -3175,13 +3176,14 @@ function renderDivFProjection() {
   if (!tb) return;
   const maxPts = 29;
   tb.innerHTML = [...DIV_F_PROJECTIONS].sort((a,b) => b.projected - a.projected).map(p => {
-    const playedPts = p.played * 3;
+    const playedPts = (DIV_F_STANDINGS.find(s => s.short === p.short) || { played: 0 }).played;
+    const matchesPlayed = Math.floor(playedPts / 3);
     const ptsPct = playedPts > 0 ? Math.round((p.current/playedPts)*100) : 0;
     const isAces = p.short === 'ACES';
     return `<tr${isAces?' style="background:#fffbeb;border-left:3px solid var(--accent)"':''}>
       <td class="rank-cell ${p.rank<=2?'top3':''}">${p.rank}</td>
       <td><span class="team-badge">${p.short}</span> ${p.full}${isAces?' <span style="font-size:.62rem;color:var(--accent);background:rgba(184,122,16,.15);padding:2px 7px;border-radius:3px;margin-left:4px">SVG CLUB</span>':''}</td>
-      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${p.played}m)</span></td>
+      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:.82rem">${playedPts} <span style="font-size:.68rem;color:#aab4c4">(${matchesPlayed}m)</span></td>
       <td class="pts-cell">${p.current} <span style="font-size:.68rem;font-weight:400;color:${ptsPct>=80?'var(--green)':ptsPct>=50?'var(--muted)':'var(--red)'}">${ptsPct}%</span></td>
       <td style="color:var(--green);font-family:'DM Mono',monospace;font-weight:600">+${p.expected}</td>
       <td style="font-family:'DM Mono',monospace;font-weight:700;color:#1e3a5f">~${p.projected}</td>
